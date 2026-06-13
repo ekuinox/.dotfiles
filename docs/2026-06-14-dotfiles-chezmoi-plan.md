@@ -31,26 +31,36 @@
 
 ---
 
-### Task 1: chezmoi をインストールする
+### Task 1: chezmoi を mise でインストールする
+
+mise で導入する（`aqua:twpayne/chezmoi` で解決される）。`mise use -g` はグローバル設定 `~/.config/mise/config.toml`（Task 5 で管理対象に取り込む）に chezmoi を宣言するため、設定ごと他マシンへ同期できる。
 
 **Files:**
-- 変更なし（ツール導入のみ）
+- Modify: `~/.config/mise/config.toml`（`mise use -g` が chezmoi の行を追記。Task 5 で取り込む）
 
-- [ ] **Step 1: winget で chezmoi をインストール**
+- [ ] **Step 1: mise で chezmoi をグローバル導入**
 
 Run:
 ```powershell
-winget install --id twpayne.chezmoi --source winget --accept-package-agreements --accept-source-agreements
+mise use -g chezmoi@latest
 ```
-Expected: `Successfully installed` で終了。
+Expected: `mise ~/.config/mise/config.toml tools: chezmoi@2.x.x` のような導入メッセージ。
 
-- [ ] **Step 2: 新しいシェルでバージョン確認**
+- [ ] **Step 2: config.toml に chezmoi が宣言されたことを確認**
 
-PATH を反映するため新しい PowerShell を開いてから:
+Run:
+```powershell
+mise config get tools.chezmoi
+```
+Expected: `latest`（または導入されたバージョン指定）が表示される。`~/.config/mise/config.toml` の `[tools]` に `chezmoi` 行が追記されている。
+
+- [ ] **Step 3: バージョン確認**
+
+Run:
 ```powershell
 chezmoi --version
 ```
-Expected: `chezmoi version v2.x.x ...` のような行が表示される。`chezmoi : 用語 ... 認識されません` の場合は PATH 反映のためシェルを開き直す。
+Expected: `chezmoi version v2.x.x ...` のような行が表示される。`chezmoi : 用語 ... 認識されません` の場合は mise の有効化のためシェルを開き直す（`mise activate` がプロファイルにあること）。
 
 ---
 
@@ -352,9 +362,10 @@ chezmoi で管理する個人 dotfiles。秘密情報・キャッシュは含め
 
 ## 新マシンでの展開
 
-chezmoi をインストール後:
+mise で chezmoi を導入してから展開する:
 
 ```
+mise use -g chezmoi@latest
 chezmoi init --apply git@github.com:ekuinox/dotfiles.git
 ```
 
