@@ -1,0 +1,61 @@
+model = "gpt-5.5"
+model_reasoning_effort = "xhigh"
+[windows]
+sandbox = "elevated"
+
+[projects.'\\?\C:\Users\ekuinox\Documents\works\repos\git\ekuinox\kgd']
+trust_level = "trusted"
+
+[projects.'\\?\C:\Users\ekuinox\Documents\works\repos\git\ekuinox\gmail-archiver']
+trust_level = "trusted"
+
+[projects.'c:\users\ekuinox\documents\new project']
+trust_level = "trusted"
+
+[projects.'c:\users\ekuinox\documents\works\repos\git\ekuinox\moa']
+trust_level = "trusted"
+
+[marketplaces.openai-bundled]
+last_updated = "2026-05-28T14:31:47Z"
+source_type = "local"
+source = '\\?\C:\Users\ekuinox\.codex\.tmp\bundled-marketplaces\openai-bundled'
+
+[marketplaces.openai-primary-runtime]
+last_updated = "2026-05-28T15:17:45Z"
+source_type = "local"
+source = '\\?\C:\Users\ekuinox\.cache\codex-runtimes\codex-primary-runtime\plugins\openai-primary-runtime'
+
+[plugins."documents@openai-primary-runtime"]
+enabled = true
+
+[plugins."spreadsheets@openai-primary-runtime"]
+enabled = true
+
+[plugins."presentations@openai-primary-runtime"]
+enabled = true
+
+[plugins."github@openai-curated"]
+enabled = true
+
+[plugins."browser@openai-bundled"]
+enabled = true
+
+[features]
+js_repl = false
+
+[mcp_servers.node_repl]
+args = []
+command = 'C:\Users\ekuinox\AppData\Local\OpenAI\Codex\bin\3c238e29bbc930ff\node_repl.exe'
+startup_timeout_sec = 120
+
+[mcp_servers.node_repl.env]
+NODE_REPL_NATIVE_PIPE_CONNECT_TIMEOUT_MS = "1000"
+NODE_REPL_NODE_MODULE_DIRS = ""
+NODE_REPL_NODE_PATH = 'C:\Users\ekuinox\AppData\Local\OpenAI\Codex\bin\5b9024f90663758b\node.exe'
+NODE_REPL_TRUSTED_CODE_PATHS = 'C:\Users\ekuinox\.codex'
+CODEX_HOME = 'C:\Users\ekuinox\.codex'
+NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "496c7b3cb95b4bc20cff49b513150606e0da0000c92bf752206bee5a6c248423"
+BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
+BROWSER_USE_MARKETPLACE_NAME = "openai-bundled"
+NODE_REPL_UNTRUSTED_ENV_ALLOWLIST = "BROWSER_USE_MARKETPLACE_NAME"
+CODEX_CLI_PATH = 'C:\Users\ekuinox\AppData\Local\OpenAI\Codex\bin\958d608b5e0546a5\codex.exe'
