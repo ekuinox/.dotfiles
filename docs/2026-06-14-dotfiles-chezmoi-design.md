@@ -30,11 +30,11 @@ chezmoi を採用する。
 | `~/.config/git/ignore` | そのまま管理 |
 | `~/.config/mise/config.toml` | そのまま管理 |
 | `~/.codex/config.toml` | 設定のみ管理（`auth.json`・各種 sqlite/DB・ログ・状態ファイルは対象外） |
-| `~/.claude/` 一部 | `settings.json` / `CLAUDE.md` / `hooks/` / `keybindings.json` のみ管理。`settings.local.json`・`.claude.json`・`cache/`・`file-history/`・`backups/`・`debug/` 等は対象外 |
+| `~/.claude/` 一部 | `CLAUDE.md` と `hooks/` のみ管理。`settings.json` は live な Figma トークンを含むため除外。`settings.local.json`・`.credentials.json`・`config.json`・`history.jsonl`・`cache/`・`file-history/`・`backups/`・`debug/` 等も対象外（`keybindings.json` は存在しない） |
 
 ## 明示的に除外するもの
 
-- 秘密情報: `.ssh` `.gnupg` `.aws` `.azure` `.mcp-auth`、`~/.codex/auth.json`・`.sandbox-secrets`、`~/.gemini/oauth_creds.json`、`~/.docker/.token_seed`、`~/.claude.json`（履歴・MCP トークン込み）、`~/.cargo/credentials`、`~/.config/configstore` など。
+- 秘密情報: `.ssh` `.gnupg` `.aws` `.azure` `.mcp-auth`、`~/.codex/auth.json`・`.sandbox-secrets`、`~/.gemini/oauth_creds.json`、`~/.docker/.token_seed`、`~/.claude.json`（履歴・MCP トークン込み）、`~/.claude/settings.json`（Figma トークン込み）・`~/.claude/.credentials.json`、`~/.cargo/credentials`、`~/.config/configstore` など。
 - キャッシュ / 生成物 / 履歴 / ツール自己管理領域: `.cache` `.chocolatey` `.matplotlib` `.ivy2` `.jdks` `.rustup` `.xargo` `.cargo`(registry等) `.metals` `.local` `.vscode*` `.storybook` `.rest-client` `.mcp-hybrid-search` `.cline`、`.dotty_history` `.lesshst` `.node_repl_history` `.zoxide.nu`(生成物) `.vivaldi_reporting_data` `.claude.json.*`(バックアップ)、空の `.biome` `.ms-ad`。
 - 今回は見送り（必要になったら追加）: `.yarnrc` `.gemini/settings.json` `.docker/daemon.json` `.crossnote` `.wol-rs.toml`。
 
