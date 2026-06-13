@@ -1,0 +1,9 @@
+# リポジトリ付随物（home に展開しない）
+README.md
+docs
+docs/**
+
+# PowerShell プロファイルは Windows 専用。他 OS では無視する
+{{ if ne .chezmoi.os "windows" }}
+Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1
+{{ end }}
