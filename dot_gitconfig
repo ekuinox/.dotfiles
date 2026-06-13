@@ -1,0 +1,6 @@
+[user]
+	email = depkey@me.com
+	name = ekuinox
+
+[include]
+	path = ~/.gitconfig.local
