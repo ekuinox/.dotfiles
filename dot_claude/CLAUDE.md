@@ -1,0 +1,34 @@
+# Global instructions
+
+## 秘密を含みうるファイルの取り扱い
+
+`settings.json` の `permissions.deny` で Read が拒否されたファイル（`.env`, `.env.local`, `.env.production`, `.env.development`, `.envrc`, `credentials.*`, `secrets.*`, `*.pem`, `id_rsa`, `id_ed25519`, `service-account*.json` 等）は、**Bash の `cat` / `head` / `tail` / `less` / `more` / `awk` / `sed` / `grep` / `xxd` / `od` / リダイレクト `< file` 等の代替経路でも内容を読み出してはいけない**。同ファイルを引数に取る pipe / xargs / 環境変数経由読み込みも同様に禁止。
+
+このルールは「明示的に deny されたパス」だけでなく、**名前から秘密が含まれそうと推測できるファイル** (`*.env*`, `*.key`, `*credentials*`, `*secrets*`, `*token*`, `*.pem`, `id_rsa*`, `id_ed25519*`, `*.p12`, `*.pfx` 等) 全般に適用する。
+
+### Why
+ユーザーがハーネス側で deny を設定している = 「Claude に読ませたくない」という明示の意思表示。Read を塞いでも Bash の別経路で読み出したら deny の目的（秘密情報漏えい防止）が完全に台無しになる。過去に `.envrc` を Read で開いて実 API キーが会話コンテキストに入った事故あり (2026-05-16)。
+
+### How to apply
+- Read が `permission denied` 等で失敗したら、同じ（または類似する）パスを Bash 経由で参照する操作を提案・実行しない
+- ファイルを直接読まずに済む手段を優先する:
+  - `.example` / `.template` / `.sample` テンプレを代わりに読む
+  - ユーザーに該当行だけ貼ってもらう
+  - `Grep` で「キー名の存在」「行数」など構造だけ確認する
+  - line offset 指定で「秘密が無さそうな範囲」だけ Read する
+- 上記でも済まない場合のみ、ユーザーに「○○の理由で △△ を見たい。許可しますか？」と明示的に許可を求める
+- 「読む前に一呼吸」: 名前から秘密が含まれそうなファイルは、Read を発行する前にテンプレや別経路で代用できないかを先に検討する
+
+## 長いタスク完了時のトースト通知（フックで自動化済み）
+
+長いタスク完了時の Windows トースト通知は、**`~/.claude/settings.json` の Stop フックで自動化済み**。ハーネスが機械的に実行するため、**Claude が手動でトーストを出す必要はない**（手動で出すと二重通知になるので出さないこと）。
+
+### 仕組み
+- `UserPromptSubmit` フック (`~/.claude/hooks/toast-start.ps1`): ターン開始時刻(UNIX秒)を `%TEMP%\claude-turn-start-<session_id>.txt` に記録。
+- `Stop` フック (`~/.claude/hooks/toast-stop.ps1`): 経過秒を計算し、**120秒以上**かかったターンのみ `NotifyIcon` でトースト表示。開始ファイルは毎回削除。
+- どちらも `powershell.exe`(Windows PowerShell 5.1) を Git Bash 経由で明示起動。スクリプトは日本語表示のため UTF-8(BOM)。
+
+### 調整したい場合
+- しきい値（既定120秒）は `toast-stop.ps1` の `$THRESHOLD` を変更。
+- 文言は `toast-stop.ps1` の `BalloonTipTitle` / `BalloonTipText` を変更。
+- 設定の確認・無効化は `/hooks` メニューから。フックが反映されない場合は一度 `/hooks` を開くか再起動すると設定が再読込される。
