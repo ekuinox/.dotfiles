@@ -13,14 +13,22 @@ chezmoi で管理する個人 dotfiles。秘密情報・キャッシュは含め
 
 ## 新マシンでの展開
 
-mise で chezmoi を導入してから展開する:
+Windows の新マシンで、以下を上から順に実行する（コピペでよい）。
 
-```
-mise use -g chezmoi@latest
-chezmoi init --apply git@github.com:ekuinox/dotfiles.git
+```powershell
+# 1. git と gh を入れる（Windows 11 標準の winget）
+winget install Git.Git GitHub.cli
+
+# 2. GitHub にログインする（ブラウザ認証。途中の git 認証連携は Yes を選ぶ）
+gh auth login
+
+# 3. chezmoi を入れて一気に展開する
+iex "&{$(irm 'https://get.chezmoi.io/ps1')} -- init --apply --source ~/.dotfiles ekuinox/.dotfiles"
 ```
 
-ソースディレクトリを `~/.dotfiles` にしたい場合は、先に `~/.config/chezmoi/chezmoi.toml` に `sourceDir = "~/.dotfiles"` を書いてから `chezmoi init` する。
+- このリポジトリは private のため、clone には GitHub 認証が必要。`gh auth login` の対話で「Authenticate Git with your GitHub credentials?」に Yes を選ぶと、chezmoi が system の git 経由で認証付き clone できる（このために git も入れている）。
+- `sourceDir`（`~/.dotfiles`）はリポジトリの `.chezmoi.toml.tmpl` から `chezmoi init` が自動生成するため、設定の手書きは不要。
+- chezmoi 自体は公式インストーラで入る。mise 本体や mise 管理ツール（node, pnpm, claude 等）はこの手順の外なので、必要なら展開後に mise を入れて `mise install` する。
 
 ## マシン固有設定
 
