@@ -17,7 +17,8 @@ Windows の新マシンで、以下を上から順に実行する（コピペで
 
 ```powershell
 # 1. git と gh を入れる（Windows 11 標準の winget）
-winget install Git.Git GitHub.cli
+winget install --id Git.Git -e
+winget install --id GitHub.cli -e
 
 # 2. GitHub にログインする（ブラウザ認証。途中の git 認証連携は Yes を選ぶ）
 gh auth login
