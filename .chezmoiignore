@@ -6,4 +6,5 @@ docs/**
 # PowerShell プロファイルは Windows 専用。他 OS では無視する
 {{ if ne .chezmoi.os "windows" }}
 Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1
+.claude/init_env.sh
 {{ end }}

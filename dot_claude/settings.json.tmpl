@@ -1,0 +1,66 @@
+{
+  "env": {
+    "BASH_ENV": "{{ .chezmoi.homeDir | replace "\\" "/" }}/.claude/init_env.sh"
+  },
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./**/.env)",
+      "Read(./.env.local)",
+      "Read(./**/.env.local)",
+      "Read(./.env.production)",
+      "Read(./**/.env.production)",
+      "Read(./.env.development)",
+      "Read(./**/.env.development)",
+      "Read(./.envrc)",
+      "Read(./**/.envrc)",
+      "Read(./**/credentials.json)",
+      "Read(./**/credentials.yaml)",
+      "Read(./**/secrets.json)",
+      "Read(./**/secrets.yaml)",
+      "Read(./**/secrets.yml)",
+      "Read(./**/*.pem)",
+      "Read(./**/id_rsa)",
+      "Read(./**/id_ed25519)",
+      "Read(./**/service-account*.json)"
+    ]
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"{{ .chezmoi.homeDir | replace "\\" "/" }}/.claude/hooks/toast-start.ps1\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"{{ .chezmoi.homeDir | replace "\\" "/" }}/.claude/hooks/toast-stop.ps1\"",
+            "timeout": 15,
+            "statusMessage": "完了通知を確認中..."
+          }
+        ]
+      }
+    ]
+  },
+  "defaultShell": "powershell",
+  "enabledPlugins": {
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "github@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true
+  },
+  "effortLevel": "high",
+  "autoUpdatesChannel": "latest",
+  "switchModelsOnFlag": true,
+  "agentPushNotifEnabled": true
+}
