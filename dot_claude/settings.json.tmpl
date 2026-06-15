@@ -27,8 +27,8 @@
       "Read(./**/service-account*.json)"
     ]
   },
-{{- if eq .chezmoi.os "windows" }}
   "hooks": {
+{{- if eq .chezmoi.os "windows" }}
     "UserPromptSubmit": [
       {
         "hooks": [
@@ -52,7 +52,23 @@
         ]
       }
     ]
+{{- else }}
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/check-gh-markdown.sh",
+            "if": "Bash(gh *)",
+            "statusMessage": "PR/issue 本文の書式を確認中..."
+          }
+        ]
+      }
+    ]
+{{- end }}
   },
+{{- if eq .chezmoi.os "windows" }}
   "defaultShell": "powershell",
 {{- end }}
   "enabledPlugins": {
