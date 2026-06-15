@@ -1,7 +1,9 @@
 {
+{{- if eq .chezmoi.os "windows" }}
   "env": {
     "BASH_ENV": "{{ .chezmoi.homeDir | replace "\\" "/" }}/.claude/init_env.sh"
   },
+{{- end }}
   "permissions": {
     "deny": [
       "Read(./.env)",
@@ -26,6 +28,7 @@
     ]
   },
   "hooks": {
+{{- if eq .chezmoi.os "windows" }}
     "UserPromptSubmit": [
       {
         "hooks": [
@@ -49,8 +52,25 @@
         ]
       }
     ]
+{{- else }}
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/check-gh-markdown.sh",
+            "if": "Bash(gh *)",
+            "statusMessage": "PR/issue 本文の書式を確認中..."
+          }
+        ]
+      }
+    ]
+{{- end }}
   },
+{{- if eq .chezmoi.os "windows" }}
   "defaultShell": "powershell",
+{{- end }}
   "enabledPlugins": {
     "rust-analyzer-lsp@claude-plugins-official": true,
     "superpowers@claude-plugins-official": true,

@@ -2,5 +2,15 @@
 	email = depkey@me.com
 	name = ekuinox
 
+# GitHub 認証は gh の credential helper に委譲する。
+# 絶対パスではなく PATH 上の gh を呼ぶことで OS 非依存にする
+# （要 gh インストール + `gh auth login`）。空行は先行 helper のリセット。
+[credential "https://github.com"]
+	helper =
+	helper = !gh auth git-credential
+[credential "https://gist.github.com"]
+	helper =
+	helper = !gh auth git-credential
+
 [include]
 	path = ~/.gitconfig.local
