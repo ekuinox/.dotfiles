@@ -17,46 +17,55 @@ let
   # Proton Pass の添付（gog の OAuth クライアント資格情報）を gog の keyring へ
   # 橋渡しする一度きりのセットアップ。secret は repo にも /nix/store にも置かず、
   # 実行時に短命な一時ファイル経由で登録する（switch 時には行わない）。
-  # 対象を指す 3 つの ID は環境変数から受け取る（.envrc + direnv での運用を想定）。
+  # 3 つの ID は環境変数で受け取り（.envrc 運用）、無ければ fzf で
+  # vault -> item -> attachment と絞り込む。
   gog-setup-credentials = pkgs.writeShellApplication {
     name = "gog-setup-credentials";
-    runtimeInputs = [ pkgs.proton-pass-cli pkgs.gogcli pkgs.coreutils ];
+    runtimeInputs = [ pkgs.proton-pass-cli pkgs.gogcli pkgs.jq pkgs.fzf pkgs.coreutils ];
     text = ''
-      SHARE_ID="''${GOG_CRED_SHARE_ID:-}"
-      ITEM_ID="''${GOG_CRED_ITEM_ID:-}"
-      ATTACHMENT_ID="''${GOG_CRED_ATTACHMENT_ID:-}"
       client="''${GOG_CRED_CLIENT:-}"
 
-      # 3 つとも未設定なら .envrc のサンプルを標準出力に出す
-      # （`gog-setup-credentials > .envrc` で雛形を作れる）
-      if [ -z "$SHARE_ID" ] && [ -z "$ITEM_ID" ] && [ -z "$ATTACHMENT_ID" ]; then
-        cat <<'SAMPLE'
-# gog-setup-credentials 用の識別子（Proton Pass の対象添付を指す）
-# pass-cli で対象の vault/item/attachment の ID を調べて設定する。
-export GOG_CRED_SHARE_ID=""
-export GOG_CRED_ITEM_ID=""
-export GOG_CRED_ATTACHMENT_ID=""
-# 任意: gog の --client 名（空ならデフォルト）
-# export GOG_CRED_CLIENT="default"
-SAMPLE
-        exit 0
-      fi
-
-      # 一部だけ未設定はエラー（3 つとも未設定のときだけサンプルを出す方針）
-      missing=""
-      if [ -z "$SHARE_ID" ]; then missing="$missing GOG_CRED_SHARE_ID"; fi
-      if [ -z "$ITEM_ID" ]; then missing="$missing GOG_CRED_ITEM_ID"; fi
-      if [ -z "$ATTACHMENT_ID" ]; then missing="$missing GOG_CRED_ATTACHMENT_ID"; fi
-      if [ -n "$missing" ]; then
-        echo "次の環境変数が未設定です:$missing" >&2
-        echo "（3 つとも未設定なら .envrc サンプルを表示します）" >&2
-        exit 1
-      fi
-
-      # pass-cli ログイン確認
+      # pass-cli ログイン確認（vault/item 取得・download に必要）
       if ! pass-cli test >/dev/null 2>&1; then
         echo "pass-cli が未ログインです。先に 'pass-cli login' を実行してください。" >&2
         exit 1
+      fi
+
+      SHARE_ID="''${GOG_CRED_SHARE_ID:-}"
+      ITEM_ID="''${GOG_CRED_ITEM_ID:-}"
+      ATTACHMENT_ID="''${GOG_CRED_ATTACHMENT_ID:-}"
+
+      # 3 つの ID が環境変数で揃っていればそれを使う。揃っていなければ
+      # fzf で vault -> item -> attachment と対話的に絞り込む。
+      if [ -z "$SHARE_ID" ] || [ -z "$ITEM_ID" ] || [ -z "$ATTACHMENT_ID" ]; then
+        vault_obj="$(pass-cli vault list --output json \
+          | jq -r '.vaults[] | "\(.name)\t\(tojson)"' \
+          | fzf --delimiter='\t' --with-nth=1 --prompt='Vault> ' | cut -f2- || true)"
+        [ -n "$vault_obj" ] || { echo "vault が選択されませんでした。" >&2; exit 1; }
+        SHARE_ID="$(printf '%s' "$vault_obj" | jq -r '.shareId // .id')"
+
+        item_obj="$(pass-cli item list --share-id "$SHARE_ID" --output json \
+          | jq -r '.items[] | "\(.title)\t\(tojson)"' \
+          | fzf --delimiter='\t' --with-nth=1 --prompt='Item> ' | cut -f2- || true)"
+        [ -n "$item_obj" ] || { echo "item が選択されませんでした。" >&2; exit 1; }
+        ITEM_ID="$(printf '%s' "$item_obj" | jq -r '.id')"
+
+        view="$(pass-cli item view --share-id "$SHARE_ID" --item-id "$ITEM_ID" --output json)"
+        att_obj="$(printf '%s' "$view" \
+          | jq -r '(.attachments // .files // [])[] | "\(.name // .fileName // .id)\t\(tojson)"' \
+          | fzf --delimiter='\t' --with-nth=1 --prompt='Attachment> ' | cut -f2- || true)"
+        if [ -z "$att_obj" ]; then
+          echo "attachment が選択されませんでした（この item に添付が無い可能性）。view JSON:" >&2
+          printf '%s\n' "$view" | jq . >&2
+          exit 1
+        fi
+        ATTACHMENT_ID="$(printf '%s' "$att_obj" | jq -r '.id // .attachmentId')"
+
+        # 次回 fzf を省けるよう、選んだ ID を .envrc 用に表示する
+        echo "選んだ ID（.envrc に保存すると次回は fzf を省略できます）:" >&2
+        echo "  export GOG_CRED_SHARE_ID=\"$SHARE_ID\"" >&2
+        echo "  export GOG_CRED_ITEM_ID=\"$ITEM_ID\"" >&2
+        echo "  export GOG_CRED_ATTACHMENT_ID=\"$ATTACHMENT_ID\"" >&2
       fi
 
       tmpdir="''${XDG_RUNTIME_DIR:-/tmp}"
