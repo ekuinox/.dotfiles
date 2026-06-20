@@ -6,7 +6,6 @@ chezmoi で管理する個人 dotfiles。秘密情報・キャッシュは含め
 
 - `~/.gitconfig`（`[user]` のみ。マシン固有設定は `~/.gitconfig.local` に置く）
 - `~/.config/git/ignore`
-- `~/.config/mise/config.toml`
 - `~/.config/home-manager/`（nix / home-manager 設定。Linux / macOS のみ）
 - `~/.config/nix/nix.conf`（flakes 有効化。Linux / macOS のみ）
 - `~/.codex/config.toml`
@@ -73,7 +72,8 @@ chezmoi 展開後、nix と home-manager を別途セットアップする。
 
 - このリポジトリは private のため、clone には GitHub 認証が必要。`gh auth login` の対話で「Authenticate Git with your GitHub credentials?」に Yes を選ぶと、chezmoi が system の git 経由で認証付き clone できる（このために git も入れている）。
 - `sourceDir`（`~/.dotfiles`）はリポジトリの `.chezmoi.toml.tmpl` から `chezmoi init` が自動生成するため、設定の手書きは不要。
-- chezmoi 自体は公式インストーラで入る。mise 本体や mise 管理ツール（node, pnpm, claude 等）はこの手順の外なので、必要なら展開後に mise を入れて `mise install` する。
+- 初回の chezmoi 自体は公式インストーラで入る（ブートストラップ用）。Linux / macOS では claude-code と chezmoi を home-manager（nix）が `home.packages` で管理するため、`home-manager switch` 後は nix 側の chezmoi も利用できる。
+- mise 本体は home-manager（`programs.mise`）が入れるが、グローバルの tool バージョンは固定しない方針のため mise の `config.toml` は chezmoi 管理対象外。node 等が必要ならプロジェクト単位の `mise.toml` 等で都度入れる。
 
 ## マシン固有設定
 

@@ -8,7 +8,7 @@
     homeDirectory =
       if pkgs.stdenv.isDarwin then "/Users/ekuinox" else "/home/ekuinox";
     stateVersion = "26.05";
-    packages = [ pkgs.claude-code ];
+    packages = [ pkgs.claude-code pkgs.chezmoi ];
     sessionVariables = { };
   };
 
