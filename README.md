@@ -1,6 +1,7 @@
 # dotfiles
 
-chezmoi で管理する個人 dotfiles。秘密情報・キャッシュは含めない。
+chezmoi で管理する個人 dotfiles。
+秘密情報・キャッシュは含めない。
 
 ## 管理対象
 
@@ -77,7 +78,8 @@ chezmoi 展開後、nix と home-manager を別途セットアップする。
 
 ## winget パッケージ管理（Windows）
 
-普段使う Windows アプリは winget で一覧管理する。アンインストールは扱わない（一覧から消しても既存マシンからは削除されない）。
+普段使う Windows アプリは winget で一覧管理する。
+アンインストールは扱わない（一覧から消しても既存マシンからは削除されない）。
 
 - 一覧: `.chezmoidata/packages.toml` の `[winget] ids` に winget のパッケージ ID を列挙する。
 - 導入: `run_onchange_install-winget-packages.ps1.tmpl` が `chezmoi apply` 時に実行され、一覧が前回から変わっていれば未導入のものだけ `winget install` する（既存はスキップ）。
