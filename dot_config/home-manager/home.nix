@@ -16,14 +16,14 @@ let
 in
 {
   nixpkgs.config.allowUnfreePredicate = pkg:
-    builtins.elem (lib.getName pkg) [ "claude-code" ];
+    builtins.elem (lib.getName pkg) [ "claude-code" "proton-pass-cli" ];
 
   home = {
     username = "ekuinox";
     homeDirectory =
       if pkgs.stdenv.isDarwin then "/Users/ekuinox" else "/home/ekuinox";
     stateVersion = "26.05";
-    packages = [ pkgs.claude-code pkgs.chezmoi pkgs.gogcli pkgs.nano redmine-go ];
+    packages = [ pkgs.claude-code pkgs.chezmoi pkgs.gogcli pkgs.nano pkgs.proton-pass-cli redmine-go ];
     sessionVariables = { };
 
     # nano のシンタックスハイライト。scopatz/nanorc プリセット（118 言語）を読み込む
