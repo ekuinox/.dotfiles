@@ -33,7 +33,7 @@ let
         | jq -r '.vaults[] | "\(.name)\t\(tojson)"' \
         | fzf --delimiter='\t' --with-nth=1 --prompt='Vault> ' | cut -f2- || true)"
       [ -n "$vault_obj" ] || { echo "vault が選択されませんでした。" >&2; exit 1; }
-      SHARE_ID="$(printf '%s' "$vault_obj" | jq -r '.shareId // .id')"
+      SHARE_ID="$(printf '%s' "$vault_obj" | jq -r '.share_id // .shareId // .id')"
 
       item_obj="$(pass-cli item list --share-id "$SHARE_ID" --output json \
         | jq -r '.items[] | "\(.title)\t\(tojson)"' \
@@ -43,14 +43,14 @@ let
 
       view="$(pass-cli item view --share-id "$SHARE_ID" --item-id "$ITEM_ID" --output json)"
       att_obj="$(printf '%s' "$view" \
-        | jq -r '(.attachments // .files // [])[] | "\(.name // .fileName // .id)\t\(tojson)"' \
+        | jq -r '(.attachments // [])[] | "\(.name // .file_name // .fileName // .id)\t\(tojson)"' \
         | fzf --delimiter='\t' --with-nth=1 --prompt='Attachment> ' | cut -f2- || true)"
       if [ -z "$att_obj" ]; then
-        echo "attachment が選択されませんでした（この item に添付が無い可能性）。view JSON:" >&2
-        printf '%s\n' "$view" | jq . >&2
+        echo "attachment が選択されませんでした。.attachments の構造を確認してください:" >&2
+        printf '%s' "$view" | jq -c '.attachments' >&2
         exit 1
       fi
-      ATTACHMENT_ID="$(printf '%s' "$att_obj" | jq -r '.id // .attachmentId')"
+      ATTACHMENT_ID="$(printf '%s' "$att_obj" | jq -r '.attachment_id // .id // .attachmentId')"
 
       # 短命な一時ファイル（tmpfs 優先）へ取得し、登録後に確実に消す
       tmpdir="''${XDG_RUNTIME_DIR:-/tmp}"
