@@ -23,8 +23,13 @@ in
     homeDirectory =
       if pkgs.stdenv.isDarwin then "/Users/ekuinox" else "/home/ekuinox";
     stateVersion = "26.05";
-    packages = [ pkgs.claude-code pkgs.chezmoi pkgs.gogcli redmine-go ];
+    packages = [ pkgs.claude-code pkgs.chezmoi pkgs.gogcli pkgs.nano redmine-go ];
     sessionVariables = { };
+
+    # nano のシンタックスハイライト。scopatz/nanorc プリセット（118 言語）を読み込む
+    file.".nanorc".text = ''
+      include "${pkgs.nanorc}/share/*.nanorc"
+    '';
   };
 
   programs = {
