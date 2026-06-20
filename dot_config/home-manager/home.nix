@@ -29,6 +29,8 @@ in
     # nano のシンタックスハイライト。scopatz/nanorc プリセット（118 言語）を読み込む
     file.".nanorc".text = ''
       include "${pkgs.nanorc}/share/*.nanorc"
+      # nix は scopatz プリセットに無いため nano 同梱の公式定義を追加する
+      include "${pkgs.nano}/share/nano/nix.nanorc"
     '';
   };
 
