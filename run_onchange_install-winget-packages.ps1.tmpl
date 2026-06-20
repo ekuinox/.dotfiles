@@ -1,0 +1,32 @@
+{{- if eq .chezmoi.os "windows" -}}
+# Run by chezmoi apply as a run_onchange hook.
+# The winget package list is managed in .chezmoidata/packages.toml.
+if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+  Write-Warning "winget not found; skipping package install"
+  exit 0
+}
+
+$ids = @(
+{{- range .winget.ids }}
+  "{{ . }}"
+{{- end }}
+)
+
+$failed = @()
+foreach ($id in $ids) {
+  winget list --id $id -e *> $null
+  if ($LASTEXITCODE -eq 0) {
+    Write-Host "skip (installed): $id"
+    continue
+  }
+  Write-Host "installing: $id"
+  winget install --id $id -e --silent `
+    --accept-source-agreements --accept-package-agreements
+  if ($LASTEXITCODE -ne 0) { $failed += $id }
+}
+
+if ($failed.Count -gt 0) {
+  Write-Warning ("failed: " + ($failed -join ", "))
+}
+exit 0
+{{- end -}}
