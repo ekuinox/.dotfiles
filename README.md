@@ -10,6 +10,7 @@ chezmoi で管理する個人 dotfiles。秘密情報・キャッシュは含め
 - `~/.codex/config.toml`
 - `~/.claude/CLAUDE.md`, `~/.claude/hooks/`
 - `~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1`（Windows のみ）
+- winget パッケージ一覧（Windows のみ。`.chezmoidata/packages.toml` に列挙、`chezmoi apply` で未導入のものを自動インストール）
 
 ## 新マシンでの展開
 
@@ -53,6 +54,16 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin init --apply --source ~/
 - このリポジトリは private のため、clone には GitHub 認証が必要。`gh auth login` の対話で「Authenticate Git with your GitHub credentials?」に Yes を選ぶと、chezmoi が system の git 経由で認証付き clone できる（このために git も入れている）。
 - `sourceDir`（`~/.dotfiles`）はリポジトリの `.chezmoi.toml.tmpl` から `chezmoi init` が自動生成するため、設定の手書きは不要。
 - chezmoi 自体は公式インストーラで入る。mise 本体や mise 管理ツール（node, pnpm, claude 等）はこの手順の外なので、必要なら展開後に mise を入れて `mise install` する。
+
+## winget パッケージ管理（Windows）
+
+普段使う Windows アプリは winget で一覧管理する。アンインストールは扱わない（一覧から消しても既存マシンからは削除されない）。
+
+- 一覧: `.chezmoidata/packages.toml` の `[winget] ids` に winget のパッケージ ID を列挙する。
+- 導入: `run_onchange_install-winget-packages.ps1.tmpl` が `chezmoi apply` 時に実行され、一覧が前回から変わっていれば未導入のものだけ `winget install` する（既存はスキップ）。
+- 追加: `chezmoi edit ~/.dotfiles/.chezmoidata/packages.toml` 相当でソースの `packages.toml` に ID を足し、`chezmoi apply` する。
+- ID の調べ方: `winget search <名前>` で出る「ID」列の値（例: `Microsoft.VisualStudioCode`）を使う。
+- Windows 以外では、テンプレートの OS ガードによりスクリプトは実行されない。
 
 ## マシン固有設定
 
