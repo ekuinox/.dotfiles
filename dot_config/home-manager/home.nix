@@ -35,5 +35,33 @@
       enable = true;
       nix-direnv.enable = true;
     };
+
+    zoxide = {
+      enable = true;
+      enableBashIntegration = true;
+    };
+
+    starship = {
+      enable = true;
+      enableBashIntegration = true;
+      settings = {
+        # OS 名をプロンプト先頭に表示する（$all は os 以外の全モジュール）
+        format = "$os$all";
+        os = {
+          disabled = false;
+          # nerd フォント無しで読めるようテキスト表記にする
+          symbols = {
+            Ubuntu = "Ubuntu ";
+            Debian = "Debian ";
+            Arch = "Arch ";
+            Fedora = "Fedora ";
+            Macos = "macOS ";
+            Windows = "Windows ";
+            Linux = "Linux ";
+            Unknown = "Unknown ";
+          };
+        };
+      };
+    };
   };
 }
