@@ -7,6 +7,7 @@ chezmoi で管理する個人 dotfiles。秘密情報・キャッシュは含め
 - `~/.gitconfig`（`[user]` のみ。マシン固有設定は `~/.gitconfig.local` に置く）
 - `~/.config/git/ignore`
 - `~/.config/mise/config.toml`
+- `~/.config/home-manager/`（nix / home-manager 設定。Linux / macOS のみ）
 - `~/.codex/config.toml`
 - `~/.claude/CLAUDE.md`, `~/.claude/hooks/`
 - `~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1`（Windows のみ）
@@ -48,6 +49,25 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin init --apply --source ~/
 - `~/.local/bin` が PATH に無い環境では、展開後に `export PATH="$HOME/.local/bin:$PATH"` をシェルの rc に追加する（次回以降の `chezmoi` コマンド用。`chezmoi apply` 自体は上記一発で完了している）。
 - Windows 固有の設定（PowerShell プロファイル、`~/.claude/settings.json` の toast フック・`defaultShell` 等）は `.chezmoiignore` と `*.tmpl` の OS 分岐により、Linux / macOS では自動的に除外される。
 
+### nix / home-manager（Linux / macOS のみ）
+
+chezmoi 展開後、nix と home-manager を別途セットアップする。
+
+1. nix をインストールする（公式または Determinate インストーラ）。
+2. chezmoi 展開で `~/.config/home-manager` が配置済みなので、初回は home-manager を直接実行して反映する。
+
+   ```sh
+   nix run home-manager/master -- switch -b bak --flake ~/.config/home-manager#wsl
+   ```
+
+3. 2 回目以降は home-manager が PATH に入るため、次で反映する（`<host>` は対象マシンの鍵。現状は `wsl`）。
+
+   ```sh
+   home-manager switch --flake ~/.config/home-manager#<host>
+   ```
+
+`.bashrc` は home-manager（`programs.bash`）が所有する。既存の `.bashrc` がある初回は `-b bak` で退避される。
+
 ### 共通の補足
 
 - このリポジトリは private のため、clone には GitHub 認証が必要。`gh auth login` の対話で「Authenticate Git with your GitHub credentials?」に Yes を選ぶと、chezmoi が system の git 経由で認証付き clone できる（このために git も入れている）。
@@ -64,4 +84,12 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin init --apply --source ~/
 chezmoi edit <file>   # ソースを編集
 chezmoi apply         # home へ反映
 chezmoi cd            # ソースディレクトリへ移動して git commit / push
+```
+
+nix 設定（`~/.config/home-manager`）は通常どおり `chezmoi edit` → `chezmoi apply` で編集・反映する。ただし `nix flake update` は chezmoi の**ターゲット側** `~/.config/home-manager/flake.lock` を書き換えるため、更新後はソースへ取り込み直す。
+
+```sh
+nix flake update --flake ~/.config/home-manager   # lock 更新（ターゲット側）
+chezmoi re-add ~/.config/home-manager/flake.lock  # ソースへ取り込み直す
+home-manager switch --flake ~/.config/home-manager#<host>
 ```

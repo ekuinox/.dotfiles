@@ -20,6 +20,7 @@
 - 秘密情報はコミットしない（README の方針: 秘密・キャッシュは含めない）。`.tmpl` に API キー等を直書きしない。
 - `.tmpl` を編集したら `chezmoi execute-template` で展開結果を確認できる。
 - グローバル CLAUDE.md の秘密ファイル取り扱いルール（deny されたパスを別経路で読まない）も踏襲する。
+- `nix flake update` で `~/.config/home-manager/flake.lock` を更新したら、`chezmoi re-add` でソースへ取り込み直す（ターゲットのみ更新されソースと乖離するため）。
 
 ## コミット / PR 規約
 
