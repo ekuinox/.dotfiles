@@ -47,20 +47,7 @@
       settings = {
         # OS 名をプロンプト先頭に表示する（$all は os 以外の全モジュール）
         format = "$os$all";
-        os = {
-          disabled = false;
-          # nerd フォント不要な絵文字で短く表示する（WSL でも追加フォント不要）
-          symbols = {
-            Ubuntu = "🐧 ";
-            Debian = "🐧 ";
-            Arch = "🐧 ";
-            Fedora = "🐧 ";
-            Linux = "🐧 ";
-            Macos = "🍎 ";
-            Windows = "🪟 ";
-            Unknown = "❓ ";
-          };
-        };
+        os.disabled = false;
       };
     };
   };
