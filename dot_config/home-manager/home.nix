@@ -17,45 +17,45 @@ let
   # Proton Pass の添付（gog の OAuth クライアント資格情報）を gog の keyring へ
   # 橋渡しする一度きりのセットアップ。secret は repo にも /nix/store にも置かず、
   # 実行時に短命な一時ファイル経由で登録する（switch 時には行わない）。
-  # 場所はプロンプトで尋ね、item view で ID を解決する（生の ID 入力は不要）。
+  # 対象を指す 3 つの ID は環境変数から受け取る（.envrc + direnv での運用を想定）。
   gog-setup-credentials = pkgs.writeShellApplication {
     name = "gog-setup-credentials";
-    runtimeInputs = [ pkgs.proton-pass-cli pkgs.gogcli pkgs.jq pkgs.coreutils pkgs.gnused pkgs.gawk ];
+    runtimeInputs = [ pkgs.proton-pass-cli pkgs.gogcli pkgs.coreutils ];
     text = ''
+      SHARE_ID="''${GOG_CRED_SHARE_ID:-}"
+      ITEM_ID="''${GOG_CRED_ITEM_ID:-}"
+      ATTACHMENT_ID="''${GOG_CRED_ATTACHMENT_ID:-}"
+      client="''${GOG_CRED_CLIENT:-}"
+
+      # 3 つとも未設定なら .envrc のサンプルを標準出力に出す
+      # （`gog-setup-credentials > .envrc` で雛形を作れる）
+      if [ -z "$SHARE_ID" ] && [ -z "$ITEM_ID" ] && [ -z "$ATTACHMENT_ID" ]; then
+        cat <<'SAMPLE'
+# gog-setup-credentials 用の識別子（Proton Pass の対象添付を指す）
+# pass-cli で対象の vault/item/attachment の ID を調べて設定する。
+export GOG_CRED_SHARE_ID=""
+export GOG_CRED_ITEM_ID=""
+export GOG_CRED_ATTACHMENT_ID=""
+# 任意: gog の --client 名（空ならデフォルト）
+# export GOG_CRED_CLIENT="default"
+SAMPLE
+        exit 0
+      fi
+
+      # 一部だけ未設定はエラー（3 つとも未設定のときだけサンプルを出す方針）
+      missing=""
+      if [ -z "$SHARE_ID" ]; then missing="$missing GOG_CRED_SHARE_ID"; fi
+      if [ -z "$ITEM_ID" ]; then missing="$missing GOG_CRED_ITEM_ID"; fi
+      if [ -z "$ATTACHMENT_ID" ]; then missing="$missing GOG_CRED_ATTACHMENT_ID"; fi
+      if [ -n "$missing" ]; then
+        echo "次の環境変数が未設定です:$missing" >&2
+        echo "（3 つとも未設定なら .envrc サンプルを表示します）" >&2
+        exit 1
+      fi
+
+      # pass-cli ログイン確認
       if ! pass-cli test >/dev/null 2>&1; then
         echo "pass-cli が未ログインです。先に 'pass-cli login' を実行してください。" >&2
-        exit 1
-      fi
-
-      read -rp "Vault 名: " VAULT
-      read -rp "Item タイトル: " ITEM_TITLE
-      read -rp "gog の --client 名（空でデフォルト）: " client
-
-      view="$(pass-cli item view --vault-name "$VAULT" --item-title "$ITEM_TITLE" --output json)"
-
-      SHARE_ID="$(printf '%s' "$view" | jq -r '.shareId // .share_id // .shareID // empty')"
-      ITEM_ID="$(printf '%s' "$view" | jq -r '.itemId // .item_id // .itemID // .id // empty')"
-      atts="$(printf '%s' "$view" | jq -r '
-        (.attachments // .files // [])[]
-        | [ (.id // .attachmentId // .attachment_id // empty),
-            (.name // .fileName // .filename // "") ] | @tsv')"
-
-      if [ -z "$SHARE_ID" ] || [ -z "$ITEM_ID" ] || [ -z "$atts" ]; then
-        echo "JSON から ID / attachment を解決できませんでした。実際のキーを確認してください:" >&2
-        printf '%s\n' "$view" | jq . >&2
-        exit 1
-      fi
-
-      if [ "$(printf '%s\n' "$atts" | wc -l)" -eq 1 ]; then
-        ATTACHMENT_ID="$(printf '%s\n' "$atts" | cut -f1)"
-      else
-        echo "添付が複数あります:" >&2
-        printf '%s\n' "$atts" | cut -f2 | sed 's/^/  - /' >&2
-        read -rp "Attachment 名: " ATTACHMENT_NAME
-        ATTACHMENT_ID="$(printf '%s\n' "$atts" | awk -F'\t' -v n="$ATTACHMENT_NAME" '$2==n{print $1; exit}')"
-      fi
-      if [ -z "$ATTACHMENT_ID" ]; then
-        echo "attachment-id を特定できませんでした。" >&2
         exit 1
       fi
 
