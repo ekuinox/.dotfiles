@@ -9,3 +9,11 @@ docs/**
 Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1
 .claude/init_env.sh
 {{ end }}
+
+# nix/home-manager は Windows 非対象。Windows でのみ無視する
+{{ if eq .chezmoi.os "windows" }}
+.config/home-manager
+.config/home-manager/**
+.config/nix
+.config/nix/**
+{{ end }}
