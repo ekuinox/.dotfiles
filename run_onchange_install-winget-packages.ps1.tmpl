@@ -1,6 +1,6 @@
 {{- if eq .chezmoi.os "windows" -}}
-# このスクリプトは chezmoi apply 時に run_onchange として実行される。
-# winget パッケージ一覧は .chezmoidata/packages.toml で管理する。
+# Run by chezmoi apply as a run_onchange hook.
+# The winget package list is managed in .chezmoidata/packages.toml.
 if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
   Write-Warning "winget not found; skipping package install"
   exit 0
@@ -8,7 +8,7 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
 
 $ids = @(
 {{- range .winget.ids }}
-  "{{ . }}",
+  "{{ . }}"
 {{- end }}
 )
 
