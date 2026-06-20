@@ -63,7 +63,8 @@ in
       historyFileSize = 20000;
       shellOptions = [ "histappend" "checkwinsize" ];
       shellAliases = {
-        # 例: ll = "ls -alF";
+        # home-manager switch（このマシンのホスト鍵は wsl）
+        hms = "home-manager switch --flake ~/.config/home-manager#wsl";
       };
     };
 
