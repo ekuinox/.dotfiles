@@ -14,4 +14,6 @@ Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1
 {{ if eq .chezmoi.os "windows" }}
 .config/home-manager
 .config/home-manager/**
+.config/nix
+.config/nix/**
 {{ end }}

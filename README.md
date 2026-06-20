@@ -8,6 +8,7 @@ chezmoi で管理する個人 dotfiles。秘密情報・キャッシュは含め
 - `~/.config/git/ignore`
 - `~/.config/mise/config.toml`
 - `~/.config/home-manager/`（nix / home-manager 設定。Linux / macOS のみ）
+- `~/.config/nix/nix.conf`（flakes 有効化。Linux / macOS のみ）
 - `~/.codex/config.toml`
 - `~/.claude/CLAUDE.md`, `~/.claude/hooks/`
 - `~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1`（Windows のみ）
@@ -54,7 +55,7 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin init --apply --source ~/
 chezmoi 展開後、nix と home-manager を別途セットアップする。
 
 1. nix をインストールする（公式または Determinate インストーラ）。
-2. chezmoi 展開で `~/.config/home-manager` が配置済みなので、初回は home-manager を直接実行して反映する。
+2. chezmoi 展開で `~/.config/nix/nix.conf`（flakes 有効化）と `~/.config/home-manager` が配置済みなので、初回は home-manager を直接実行して反映する。flakes は nix.conf で有効化済みのため `--extra-experimental-features` は不要。
 
    ```sh
    nix run home-manager/master -- switch -b bak --flake ~/.config/home-manager#wsl
