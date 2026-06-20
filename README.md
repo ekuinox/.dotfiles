@@ -8,7 +8,7 @@ chezmoi で管理する個人 dotfiles。秘密情報・キャッシュは含め
 - `~/.config/git/ignore`
 - `~/.config/home-manager/`（nix / home-manager 設定。Linux / macOS のみ）
 - `~/.config/nix/nix.conf`（flakes 有効化。Linux / macOS のみ）
-- `~/.claude/CLAUDE.md`, `~/.claude/hooks/`
+- `~/.claude/CLAUDE.md`, `~/.claude/hooks/`, `~/.claude/skills/`
 - `~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1`（Windows のみ）
 - winget パッケージ一覧（Windows のみ。`.chezmoidata/packages.toml` に列挙、`chezmoi apply` で未導入のものを自動インストール）
 
