@@ -49,16 +49,16 @@
         format = "$os$all";
         os = {
           disabled = false;
-          # nerd フォント無しで読めるようテキスト表記にする
+          # nerd フォント不要な絵文字で短く表示する（WSL でも追加フォント不要）
           symbols = {
-            Ubuntu = "Ubuntu ";
-            Debian = "Debian ";
-            Arch = "Arch ";
-            Fedora = "Fedora ";
-            Macos = "macOS ";
-            Windows = "Windows ";
-            Linux = "Linux ";
-            Unknown = "Unknown ";
+            Ubuntu = "🐧 ";
+            Debian = "🐧 ";
+            Arch = "🐧 ";
+            Fedora = "🐧 ";
+            Linux = "🐧 ";
+            Macos = "🍎 ";
+            Windows = "🪟 ";
+            Unknown = "❓ ";
           };
         };
       };
