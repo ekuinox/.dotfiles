@@ -4,4 +4,7 @@ ids = [
   "GitHub.cli",
   "Microsoft.VisualStudioCode",
   "7zip.7zip",
+  "jdx.mise",
+  "Starship.Starship",
+  "ShareX.ShareX",
 ]
