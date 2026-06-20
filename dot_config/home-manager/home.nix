@@ -17,57 +17,42 @@ let
   # Proton Pass の添付（gog の OAuth クライアント資格情報）を gog の keyring へ
   # 橋渡しする一度きりのセットアップ。secret は repo にも /nix/store にも置かず、
   # 実行時に短命な一時ファイル経由で登録する（switch 時には行わない）。
-  # 3 つの ID は環境変数で受け取り（.envrc 運用）、無ければ fzf で
-  # vault -> item -> attachment と絞り込む。
+  # 対象は fzf で vault -> item -> attachment と絞り込んで選ぶ。
   gog-setup-credentials = pkgs.writeShellApplication {
     name = "gog-setup-credentials";
     runtimeInputs = [ pkgs.proton-pass-cli pkgs.gogcli pkgs.jq pkgs.fzf pkgs.coreutils ];
     text = ''
-      client="''${GOG_CRED_CLIENT:-}"
-
       # pass-cli ログイン確認（vault/item 取得・download に必要）
       if ! pass-cli test >/dev/null 2>&1; then
         echo "pass-cli が未ログインです。先に 'pass-cli login' を実行してください。" >&2
         exit 1
       fi
 
-      SHARE_ID="''${GOG_CRED_SHARE_ID:-}"
-      ITEM_ID="''${GOG_CRED_ITEM_ID:-}"
-      ATTACHMENT_ID="''${GOG_CRED_ATTACHMENT_ID:-}"
+      # fzf で vault -> item -> attachment と絞り込む
+      vault_obj="$(pass-cli vault list --output json \
+        | jq -r '.vaults[] | "\(.name)\t\(tojson)"' \
+        | fzf --delimiter='\t' --with-nth=1 --prompt='Vault> ' | cut -f2- || true)"
+      [ -n "$vault_obj" ] || { echo "vault が選択されませんでした。" >&2; exit 1; }
+      SHARE_ID="$(printf '%s' "$vault_obj" | jq -r '.shareId // .id')"
 
-      # 3 つの ID が環境変数で揃っていればそれを使う。揃っていなければ
-      # fzf で vault -> item -> attachment と対話的に絞り込む。
-      if [ -z "$SHARE_ID" ] || [ -z "$ITEM_ID" ] || [ -z "$ATTACHMENT_ID" ]; then
-        vault_obj="$(pass-cli vault list --output json \
-          | jq -r '.vaults[] | "\(.name)\t\(tojson)"' \
-          | fzf --delimiter='\t' --with-nth=1 --prompt='Vault> ' | cut -f2- || true)"
-        [ -n "$vault_obj" ] || { echo "vault が選択されませんでした。" >&2; exit 1; }
-        SHARE_ID="$(printf '%s' "$vault_obj" | jq -r '.shareId // .id')"
+      item_obj="$(pass-cli item list --share-id "$SHARE_ID" --output json \
+        | jq -r '.items[] | "\(.title)\t\(tojson)"' \
+        | fzf --delimiter='\t' --with-nth=1 --prompt='Item> ' | cut -f2- || true)"
+      [ -n "$item_obj" ] || { echo "item が選択されませんでした。" >&2; exit 1; }
+      ITEM_ID="$(printf '%s' "$item_obj" | jq -r '.id')"
 
-        item_obj="$(pass-cli item list --share-id "$SHARE_ID" --output json \
-          | jq -r '.items[] | "\(.title)\t\(tojson)"' \
-          | fzf --delimiter='\t' --with-nth=1 --prompt='Item> ' | cut -f2- || true)"
-        [ -n "$item_obj" ] || { echo "item が選択されませんでした。" >&2; exit 1; }
-        ITEM_ID="$(printf '%s' "$item_obj" | jq -r '.id')"
-
-        view="$(pass-cli item view --share-id "$SHARE_ID" --item-id "$ITEM_ID" --output json)"
-        att_obj="$(printf '%s' "$view" \
-          | jq -r '(.attachments // .files // [])[] | "\(.name // .fileName // .id)\t\(tojson)"' \
-          | fzf --delimiter='\t' --with-nth=1 --prompt='Attachment> ' | cut -f2- || true)"
-        if [ -z "$att_obj" ]; then
-          echo "attachment が選択されませんでした（この item に添付が無い可能性）。view JSON:" >&2
-          printf '%s\n' "$view" | jq . >&2
-          exit 1
-        fi
-        ATTACHMENT_ID="$(printf '%s' "$att_obj" | jq -r '.id // .attachmentId')"
-
-        # 次回 fzf を省けるよう、選んだ ID を .envrc 用に表示する
-        echo "選んだ ID（.envrc に保存すると次回は fzf を省略できます）:" >&2
-        echo "  export GOG_CRED_SHARE_ID=\"$SHARE_ID\"" >&2
-        echo "  export GOG_CRED_ITEM_ID=\"$ITEM_ID\"" >&2
-        echo "  export GOG_CRED_ATTACHMENT_ID=\"$ATTACHMENT_ID\"" >&2
+      view="$(pass-cli item view --share-id "$SHARE_ID" --item-id "$ITEM_ID" --output json)"
+      att_obj="$(printf '%s' "$view" \
+        | jq -r '(.attachments // .files // [])[] | "\(.name // .fileName // .id)\t\(tojson)"' \
+        | fzf --delimiter='\t' --with-nth=1 --prompt='Attachment> ' | cut -f2- || true)"
+      if [ -z "$att_obj" ]; then
+        echo "attachment が選択されませんでした（この item に添付が無い可能性）。view JSON:" >&2
+        printf '%s\n' "$view" | jq . >&2
+        exit 1
       fi
+      ATTACHMENT_ID="$(printf '%s' "$att_obj" | jq -r '.id // .attachmentId')"
 
+      # 短命な一時ファイル（tmpfs 優先）へ取得し、登録後に確実に消す
       tmpdir="''${XDG_RUNTIME_DIR:-/tmp}"
       tmp="$(mktemp "$tmpdir/gog-cred.XXXXXX")"
       trap 'shred -u "$tmp" 2>/dev/null || rm -f "$tmp"' EXIT
@@ -76,11 +61,7 @@ let
         --share-id "$SHARE_ID" --item-id "$ITEM_ID" --attachment-id "$ATTACHMENT_ID" \
         --output "$tmp"
 
-      if [ -n "$client" ]; then
-        gog auth credentials set "$tmp" --client "$client"
-      else
-        gog auth credentials set "$tmp"
-      fi
+      gog auth credentials set "$tmp"
 
       echo "OK: OAuth クライアント資格情報を keyring に登録しました。"
       echo "次に: gog auth add <email>  でアカウントを認可してください。"
