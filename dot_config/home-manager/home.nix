@@ -136,6 +136,11 @@ in
       enableBashIntegration = true;
     };
 
+    fzf = {
+      enable = true;
+      enableBashIntegration = true;
+    };
+
     starship = {
       enable = true;
       enableBashIntegration = true;
