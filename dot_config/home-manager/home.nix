@@ -1,28 +1,10 @@
 { config, pkgs, lib, ... }:
 let
-  # nixpkgs に無い Go CLI を buildGoModule で自前ビルドする
-  redmine-go = pkgs.buildGoModule {
-    pname = "redmine-go";
-    version = "0.2.0";
-    src = pkgs.fetchFromGitHub {
-      owner = "kqns91";
-      repo = "redmine-go";
-      rev = "v0.2.0";
-      hash = "sha256-jrYo3ptqfHJk8r+05ndwBgg1UBJMcF4p0NNBoGjHcXM=";
-    };
-    vendorHash = "sha256-zFVdCFZK5uQAaIv3c8IMp/0B0sHOdV+xLjvjxZhEUto=";
-    subPackages = [ "cmd/redmine" ];
-  };
-
-  # Proton Pass の添付（gog の OAuth クライアント資格情報）を gog の keyring へ
-  # 橋渡しする一度きりのセットアップ。secret は repo にも /nix/store にも置かず、
-  # 実行時に短命な一時ファイル経由で登録する（switch 時には行わない）。
-  # 本体は別ファイル（scripts/gog-setup-credentials.sh）に置き readFile で読む。
-  gog-setup-credentials = pkgs.writeShellApplication {
-    name = "gog-setup-credentials";
-    runtimeInputs = [ pkgs.proton-pass-cli pkgs.gogcli pkgs.jq pkgs.fzf pkgs.coreutils ];
-    text = builtins.readFile ./scripts/gog-setup-credentials.sh;
-  };
+  # nixpkgs に無い自前パッケージは packages/ 配下に 1 ファイルずつ分離し、
+  # callPackage で nixpkgs の依存（stdenv/fetchurl 等）を自動注入して読み込む。
+  redmine-go = pkgs.callPackage ./packages/redmine-go.nix { };
+  ntn = pkgs.callPackage ./packages/ntn.nix { };
+  gog-setup-credentials = pkgs.callPackage ./packages/gog-setup-credentials.nix { };
 in
 {
   nixpkgs.config.allowUnfreePredicate = pkg:
@@ -40,6 +22,7 @@ in
       pkgs.jq
       pkgs.nano
       pkgs.proton-pass-cli
+      ntn
       redmine-go
       gog-setup-credentials
     ];
