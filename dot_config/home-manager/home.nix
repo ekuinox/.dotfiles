@@ -21,6 +21,8 @@ in
       pkgs.gogcli
       pkgs.jq
       pkgs.nano
+      pkgs.podman
+      pkgs.podman-compose
       pkgs.proton-pass-cli
       ntn
       redmine-go
@@ -33,6 +35,19 @@ in
       include "${pkgs.nanorc}/share/*.nanorc"
       # nix は scopatz プリセットに無いため nano 同梱の公式定義を追加する
       include "${pkgs.nano}/share/nano/nix.nanorc"
+    '';
+
+    # rootless podman 用の containers 設定。非 NixOS では /etc/containers を
+    # 誰も用意しないため、ユーザー側 (~/.config/containers) を home-manager で管理する。
+    # イメージ署名ポリシー。これが無いと "no policy.json file found" で起動できない
+    file.".config/containers/policy.json".text = ''
+      {
+        "default": [{ "type": "insecureAcceptAnything" }]
+      }
+    '';
+    # 短縮名 (hello-world 等) を docker.io から解決できるようにする
+    file.".config/containers/registries.conf".text = ''
+      unqualified-search-registries = ["docker.io"]
     '';
   };
 
