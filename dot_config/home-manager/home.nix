@@ -20,6 +20,7 @@ in
       pkgs.chezmoi
       pkgs.gogcli
       pkgs.jq
+      pkgs.just
       pkgs.nano
       pkgs.podman
       pkgs.podman-compose
