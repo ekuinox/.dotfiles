@@ -87,6 +87,16 @@ chezmoi 展開後、nix と home-manager を別途セットアップする。
 - ID の調べ方: `winget search <名前>` で出る「ID」列の値（例: `Microsoft.VisualStudioCode`）を使う。
 - Windows 以外では、テンプレートの OS ガードによりスクリプトは実行されない。
 
+## Figma MCP（Claude Code）
+
+Claude Code から Figma を参照するためのリモート MCP サーバーを user スコープで登録する。
+リモート版（`https://mcp.figma.com/mcp`）を使い、認証はブラウザ OAuth なので設定にシークレットは含めない。
+
+- 導入: `run_onchange_register-figma-mcp.sh.tmpl` が `chezmoi apply` 時に実行され、未登録なら `claude mcp add --scope user --transport http figma https://mcp.figma.com/mcp` を実行する（登録済みはスキップ）。
+- 認証: 登録後に `claude` を起動し、`/mcp` から `figma` を選んで Authenticate（ブラウザで Allow access）する。`~/.claude.json` に登録され、認証トークンもそこに保存される（このリポジトリでは管理しない）。
+- 確認: `claude mcp get figma` でスコープと接続状態を確認できる。
+- Windows 以外で実行される（テンプレートの OS ガード）。Claude Code を WSL/Linux 側で使う前提。
+
 ## マシン固有設定
 
 `~/.gitconfig.local` に `[safe]` directory などマシン固有の git 設定を置く（このリポジトリでは管理しない）。
