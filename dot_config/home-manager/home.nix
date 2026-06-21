@@ -26,6 +26,7 @@ in
     packages = [
       pkgs.claude-code
       pkgs.chezmoi
+      pkgs.gcc
       pkgs.gogcli
       pkgs.jq
       pkgs.just
