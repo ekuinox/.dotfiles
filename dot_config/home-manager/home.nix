@@ -51,6 +51,11 @@ in
     file.".config/containers/registries.conf".text = ''
       unqualified-search-registries = ["docker.io"]
     '';
+    # docker compose ... 実行時の "Executing external compose provider" 警告を抑制する
+    file.".config/containers/containers.conf".text = ''
+      [engine]
+      compose_warning_logs = false
+    '';
   };
 
   programs = {
@@ -65,6 +70,10 @@ in
       shellAliases = {
         # home-manager switch（このマシンのホスト鍵は wsl）
         hms = "home-manager switch --flake ~/.config/home-manager#wsl";
+        # docker は導入せず podman に委譲する（対話シェルのみ。スクリプトには効かない）
+        # docker compose ... は podman 内蔵の compose が podman-compose に委譲する
+        docker = "podman";
+        docker-compose = "podman-compose";
       };
     };
 
