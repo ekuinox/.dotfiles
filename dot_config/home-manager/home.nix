@@ -24,6 +24,10 @@ in
       if pkgs.stdenv.isDarwin then "/Users/ekuinox" else "/home/ekuinox";
     stateVersion = "26.05";
     packages = [
+      # Ubuntu 26.04 標準の uutils ls はロケールを見ず、日本語など非 ASCII の
+      # ファイル名を端末で ? や 8 進エスケープに化けさせる（最新版でも未修正）。
+      # 成熟した GNU coreutils を PATH 先頭(nix-profile)に置き uutils(/usr/bin) を上書きする。
+      pkgs.coreutils
       pkgs.claude-code
       pkgs.chezmoi
       pkgs.gcc
