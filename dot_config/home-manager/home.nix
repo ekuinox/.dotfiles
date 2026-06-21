@@ -24,6 +24,7 @@ in
       pkgs.podman
       pkgs.podman-compose
       pkgs.proton-pass-cli
+      pkgs.strace
       ntn
       redmine-go
       gog-setup-credentials
