@@ -5,6 +5,14 @@ let
   redmine-go = pkgs.callPackage ./packages/redmine-go.nix { };
   ntn = pkgs.callPackage ./packages/ntn.nix { };
   gog-setup-credentials = pkgs.callPackage ./packages/gog-setup-credentials.nix { };
+  # docker は導入せず podman へ委譲する。エイリアスは対話シェルにしか効かず
+  # justfile やスクリプトの sh からは見えないため、PATH 上に実体のラッパーを置く。
+  docker-compat = pkgs.writeShellScriptBin "docker" ''
+    exec ${pkgs.podman}/bin/podman "$@"
+  '';
+  docker-compose-compat = pkgs.writeShellScriptBin "docker-compose" ''
+    exec ${pkgs.podman-compose}/bin/podman-compose "$@"
+  '';
 in
 {
   nixpkgs.config.allowUnfreePredicate = pkg:
@@ -29,6 +37,8 @@ in
       ntn
       redmine-go
       gog-setup-credentials
+      docker-compat
+      docker-compose-compat
     ];
     sessionVariables = { };
 
@@ -70,10 +80,6 @@ in
       shellAliases = {
         # home-manager switch（このマシンのホスト鍵は wsl）
         hms = "home-manager switch --flake ~/.config/home-manager#wsl";
-        # docker は導入せず podman に委譲する（対話シェルのみ。スクリプトには効かない）
-        # docker compose ... は podman 内蔵の compose が podman-compose に委譲する
-        docker = "podman";
-        docker-compose = "podman-compose";
       };
     };
 
