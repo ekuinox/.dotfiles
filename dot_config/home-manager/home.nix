@@ -81,6 +81,10 @@ in
       shellAliases = {
         # home-manager switch（このマシンのホスト鍵は wsl）
         hms = "home-manager switch --flake ~/.config/home-manager#wsl";
+        # uutils coreutils の ls は TTY 出力時、日本語など非 ASCII のファイル名を
+        # 既定で \343... の 8 進エスケープ（shell-escape クォート）にし、さらに
+        # -q(hide-control-chars) で ? に置換してしまう。両方を解除して生の UTF-8 を出す。
+        ls = "ls --quoting-style=literal --show-control-chars";
       };
     };
 
