@@ -1,4 +1,4 @@
-{ config, pkgs, lib, host, ... }:
+{ config, pkgs, lib, host, paseo, ... }:
 let
   # nixpkgs に無い自前パッケージは packages/ 配下に 1 ファイルずつ分離し、
   # callPackage で nixpkgs の依存（stdenv/fetchurl 等）を自動注入して読み込む。
@@ -44,6 +44,7 @@ in
       gog-setup-credentials
       docker-compat
       docker-compose-compat
+      paseo
     ];
     sessionVariables = { };
 
