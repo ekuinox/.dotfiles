@@ -31,6 +31,7 @@ in
       pkgs.claude-code
       pkgs.chezmoi
       pkgs.gcc
+      pkgs.gh
       pkgs.gogcli
       pkgs.jq
       pkgs.just
