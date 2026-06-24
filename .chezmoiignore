@@ -4,9 +4,10 @@ CLAUDE.md
 docs
 docs/**
 
-# PowerShell プロファイルは Windows 専用。他 OS では無視する
+# PowerShell プロファイルは Windows 専用。他 OS では入れ物ごと無視する
 {{ if ne .chezmoi.os "windows" }}
-Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1
+Documents
+Documents/**
 .claude/init_env.sh
 {{ end }}
 
