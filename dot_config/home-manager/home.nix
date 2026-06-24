@@ -1,4 +1,4 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, host, ... }:
 let
   # nixpkgs に無い自前パッケージは packages/ 配下に 1 ファイルずつ分離し、
   # callPackage で nixpkgs の依存（stdenv/fetchurl 等）を自動注入して読み込む。
@@ -83,8 +83,8 @@ in
       historyFileSize = 20000;
       shellOptions = [ "histappend" "checkwinsize" ];
       shellAliases = {
-        # home-manager switch（このマシンのホスト鍵は wsl）
-        hms = "home-manager switch --flake ~/.config/home-manager#wsl";
+        # home-manager switch。ホスト鍵は flake から渡される現ホスト名を使う。
+        hms = "home-manager switch --flake ~/.config/home-manager#${host}";
       };
     };
 
