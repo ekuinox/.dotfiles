@@ -1,4 +1,4 @@
-{ config, pkgs, lib, host, ... }:
+{ config, pkgs, lib, host, paseo, ... }:
 let
   # nixpkgs に無い自前パッケージは packages/ 配下に 1 ファイルずつ分離し、
   # callPackage で nixpkgs の依存（stdenv/fetchurl 等）を自動注入して読み込む。
@@ -44,6 +44,7 @@ in
       gog-setup-credentials
       docker-compat
       docker-compose-compat
+      paseo
     ];
     sessionVariables = { };
 
@@ -117,5 +118,26 @@ in
         os.disabled = false;
       };
     };
+  };
+
+  # Paseo デーモンを常駐させる。状態は $HOME 配下 (~/.paseo, ~/.claude) に
+  # 永続するため、再起動でエージェント（セッション）は保持され、進行中ターン
+  # だけが中断される。systemd user の環境は最小限で .bashrc を読まないため、
+  # デーモンが生成するエージェント (claude 等) 用に PATH を明示する。
+  # ヘッドレス運用で未ログイン時も動かすには `loginctl enable-linger` が別途必要。
+  systemd.user.services.paseo = {
+    Unit = {
+      Description = "Paseo daemon (control AI coding agents remotely)";
+      After = [ "network-online.target" ];
+      Wants = [ "network-online.target" ];
+    };
+    Service = {
+      ExecStart = "${paseo}/bin/paseo start --foreground";
+      Restart = "on-failure";
+      RestartSec = 5;
+      Environment =
+        [ "PATH=${config.home.profileDirectory}/bin:/usr/local/bin:/usr/bin:/bin" ];
+    };
+    Install.WantedBy = [ "default.target" ];
   };
 }
