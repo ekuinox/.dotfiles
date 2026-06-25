@@ -85,6 +85,16 @@ in
       historySize = 10000;
       historyFileSize = 20000;
       shellOptions = [ "histappend" "checkwinsize" ];
+      # 非ログインの対話シェル（新しいタブや tmux 等）は /etc/profile を読まず、
+      # multi-user nix の PATH 設定（/etc/profile.d/nix.sh）が効かない。nix 本体は
+      # ~/.nix-profile ではなく root の default プロファイルにあるため見失う。
+      # nix が未ロードのときだけ公式スクリプトを読み込んで補う。パスを直書きせず
+      # 公式の single source に委譲し、ログインシェルでの二重読み込み（PATH 重複）も避ける。
+      initExtra = ''
+        if ! command -v nix >/dev/null 2>&1 && [ -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
+          . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+        fi
+      '';
       shellAliases = {
         # home-manager switch。ホスト鍵は flake から渡される現ホスト名を使う。
         hms = "home-manager switch --flake ~/.config/home-manager#${host}";
