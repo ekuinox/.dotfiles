@@ -28,6 +28,7 @@ in
       # ファイル名を端末で ? や 8 進エスケープに化けさせる（最新版でも未修正）。
       # 成熟した GNU coreutils を PATH 先頭(nix-profile)に置き uutils(/usr/bin) を上書きする。
       pkgs.coreutils
+      pkgs.awscli2
       pkgs.claude-code
       pkgs.chezmoi
       pkgs.gcc
