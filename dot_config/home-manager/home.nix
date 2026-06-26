@@ -124,8 +124,10 @@ in
 
   # Paseo デーモンを常駐させる。状態は $HOME 配下 (~/.paseo, ~/.claude) に
   # 永続するため、再起動でエージェント（セッション）は保持され、進行中ターン
-  # だけが中断される。systemd user の環境は最小限で .bashrc を読まないため、
-  # デーモンが生成するエージェント (claude 等) 用に PATH を明示する。
+  # だけが中断される。systemd user の環境は最小限で .bashrc も /etc/profile も
+  # 読まないため、デーモンが生成するエージェント (claude 等) 用に PATH を明示する。
+  # nix 本体 (nix, nix-build 等) は ~/.nix-profile ではなく multi-user の default
+  # プロファイル配下にあるので、エージェントから nix が引けるよう明示的に含める。
   # ヘッドレス運用で未ログイン時も動かすには `loginctl enable-linger` が別途必要。
   systemd.user.services.paseo = {
     Unit = {
@@ -137,8 +139,9 @@ in
       ExecStart = "${paseo}/bin/paseo start --foreground";
       Restart = "on-failure";
       RestartSec = 5;
-      Environment =
-        [ "PATH=${config.home.profileDirectory}/bin:/usr/local/bin:/usr/bin:/bin" ];
+      Environment = [
+        "PATH=${config.home.profileDirectory}/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin:/bin"
+      ];
     };
     Install.WantedBy = [ "default.target" ];
   };
