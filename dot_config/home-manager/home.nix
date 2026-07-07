@@ -23,14 +23,12 @@ in
     homeDirectory =
       if pkgs.stdenv.isDarwin then "/Users/ekuinox" else "/home/ekuinox";
     stateVersion = "26.05";
+    # programs.* モジュールがあるツール（bat/eza/ripgrep/fd/btop/lazygit/
+    # lazydocker/tealdeer/yazi）は下の programs で enable するのでここには置かない。
     packages = [
       pkgs.awscli2
       # netstat 代替。帯域をプロセス別に可視化する
       pkgs.bandwhich
-      # cat 代替。シンタックスハイライト＋行番号＋git 差分表示
-      pkgs.bat
-      # top 代替のリッチなシステムモニタ
-      pkgs.btop
       pkgs.chezmoi
       pkgs.claude-code
       # Cloudflare Tunnel のクライアント。`cloudflared tunnel ...` を PATH 上に置く
@@ -39,37 +37,29 @@ in
       # ファイル名を端末で ? や 8 進エスケープに化けさせる（最新版でも未修正）。
       # 成熟した GNU coreutils を PATH 先頭(nix-profile)に置き uutils(/usr/bin) を上書きする。
       pkgs.coreutils
+      # /usr/bin/curl を nix 管理版で上書きし、バージョンを固定する
+      pkgs.curl
       # du 代替。ディスク使用量を視覚的に表示（アトリビュート名は dust、中身は du-dust）
       pkgs.dust
-      # ls 代替。アイコン・git 状態・tree 表示
-      pkgs.eza
-      # find 代替。直感的で速い
-      pkgs.fd
       pkgs.gcc
       pkgs.gh
       pkgs.gogcli
-      # curl 代替の HTTP クライアント
+      # curl 代替の HTTP クライアント（本体コマンドは http / https）
       pkgs.httpie
       pkgs.jq
       pkgs.just
-      # コンテナ操作の TUI（podman 互換）
-      pkgs.lazydocker
-      # Git 操作の TUI
-      pkgs.lazygit
       pkgs.nano
       pkgs.podman
       pkgs.podman-compose
       pkgs.proton-pass-cli
-      # grep 代替。gitignore を考慮した高速検索（rg）
-      pkgs.ripgrep
       # sed 代替。直感的な文字列置換
       pkgs.sd
       pkgs.strace
-      # tldr。man の実用例だけを簡潔に表示
-      pkgs.tealdeer
       pkgs.tree
       # ファイル変更を検知してコマンドを自動実行
       pkgs.watchexec
+      # /usr/bin/wget を nix 管理版で上書きし、バージョンを固定する
+      pkgs.wget
       # curl 代替の軽量 HTTP クライアント（Rust 製）
       pkgs.xh
       # jq の YAML/XML 版
@@ -112,6 +102,29 @@ in
 
   programs = {
     home-manager.enable = true;
+
+    # cat 代替。シンタックスハイライト＋行番号＋git 差分表示
+    bat.enable = true;
+    # top 代替のリッチなシステムモニタ
+    btop.enable = true;
+    # ls 代替。enableBashIntegration を有効にすると ls→eza エイリアスが張られ
+    # coreutils の ls を上書きしてしまうため、意図的に enable のみとする。
+    eza.enable = true;
+    # find 代替。直感的で速い
+    fd.enable = true;
+    # コンテナ操作の TUI（podman 互換）
+    lazydocker.enable = true;
+    # Git 操作の TUI
+    lazygit.enable = true;
+    # grep 代替。gitignore を考慮した高速検索（rg）
+    ripgrep.enable = true;
+    # tldr。man の実用例だけを簡潔に表示
+    tealdeer.enable = true;
+    # ターミナルファイルマネージャ。`y` で終了時に最後の cwd へ cd するラッパーを追加
+    yazi = {
+      enable = true;
+      enableBashIntegration = true;
+    };
 
     bash = {
       enable = true;
