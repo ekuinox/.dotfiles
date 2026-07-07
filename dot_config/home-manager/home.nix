@@ -31,6 +31,8 @@ in
       pkgs.awscli2
       pkgs.claude-code
       pkgs.chezmoi
+      # Cloudflare Tunnel のクライアント。`cloudflared tunnel ...` を PATH 上に置く
+      pkgs.cloudflared
       pkgs.gcc
       pkgs.gh
       pkgs.gogcli
