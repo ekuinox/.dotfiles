@@ -24,11 +24,15 @@ in
       if pkgs.stdenv.isDarwin then "/Users/ekuinox" else "/home/ekuinox";
     stateVersion = "26.05";
     # programs.* モジュールがあるツール（bat/eza/ripgrep/fd/btop/lazygit/
-    # lazydocker/tealdeer/yazi）は下の programs で enable するのでここには置かない。
+    # lazydocker/tealdeer/yazi/zellij）は下の programs で enable するのでここには置かない。
+    # yazi のプレビュー依存（chafa/ffmpeg-headless/imagemagick/p7zip/poppler-utils）は
+    # PATH 上にあれば yazi が自動的に検出して使う。jq/fd/ripgrep/fzf/zoxide は導入済み。
     packages = [
       pkgs.awscli2
       # netstat 代替。帯域をプロセス別に可視化する
       pkgs.bandwhich
+      # yazi プレビュー: 画像をターミナル描画（sixel/kitty 非対応端末向けフォールバック）
+      pkgs.chafa
       pkgs.chezmoi
       pkgs.claude-code
       # Cloudflare Tunnel のクライアント。`cloudflared tunnel ...` を PATH 上に置く
@@ -41,16 +45,24 @@ in
       pkgs.curl
       # du 代替。ディスク使用量を視覚的に表示（アトリビュート名は dust、中身は du-dust）
       pkgs.dust
+      # yazi プレビュー: 動画サムネイル生成（headless で軽量）
+      pkgs.ffmpeg-headless
       pkgs.gcc
       pkgs.gh
       pkgs.gogcli
       # curl 代替の HTTP クライアント（本体コマンドは http / https）
       pkgs.httpie
+      # yazi プレビュー: SVG/HEIC/フォント等の変換
+      pkgs.imagemagick
       pkgs.jq
       pkgs.just
       pkgs.nano
+      # yazi プレビュー: 書庫(zip/7z 等)の中身表示（7z コマンド）
+      pkgs.p7zip
       pkgs.podman
       pkgs.podman-compose
+      # yazi プレビュー: PDF のサムネイル生成（pdftoppm）
+      pkgs.poppler-utils
       pkgs.proton-pass-cli
       # sed 代替。直感的な文字列置換
       pkgs.sd
@@ -64,7 +76,6 @@ in
       pkgs.xh
       # jq の YAML/XML 版
       pkgs.yq-go
-      pkgs.zellij
       ntn
       redmine-go
       gog-setup-credentials
@@ -124,6 +135,15 @@ in
     yazi = {
       enable = true;
       enableBashIntegration = true;
+    };
+
+    # ターミナルマルチプレクサ。bash 統合で対話シェル起動時に自動起動する。
+    # attachExistingSession=true で新しい端末は既存セッションへ接続する
+    # （無効だと端末を開くたびに別セッションが増えてしまう）。
+    zellij = {
+      enable = true;
+      enableBashIntegration = true;
+      attachExistingSession = true;
     };
 
     bash = {
