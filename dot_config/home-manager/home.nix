@@ -43,6 +43,7 @@ in
       pkgs.podman-compose
       pkgs.proton-pass-cli
       pkgs.strace
+      pkgs.tree
       pkgs.zellij
       ntn
       redmine-go
