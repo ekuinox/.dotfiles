@@ -24,26 +24,56 @@ in
       if pkgs.stdenv.isDarwin then "/Users/ekuinox" else "/home/ekuinox";
     stateVersion = "26.05";
     packages = [
+      pkgs.awscli2
+      # netstat 代替。帯域をプロセス別に可視化する
+      pkgs.bandwhich
+      # cat 代替。シンタックスハイライト＋行番号＋git 差分表示
+      pkgs.bat
+      # top 代替のリッチなシステムモニタ
+      pkgs.btop
+      pkgs.chezmoi
+      pkgs.claude-code
+      # Cloudflare Tunnel のクライアント。`cloudflared tunnel ...` を PATH 上に置く
+      pkgs.cloudflared
       # Ubuntu 26.04 標準の uutils ls はロケールを見ず、日本語など非 ASCII の
       # ファイル名を端末で ? や 8 進エスケープに化けさせる（最新版でも未修正）。
       # 成熟した GNU coreutils を PATH 先頭(nix-profile)に置き uutils(/usr/bin) を上書きする。
       pkgs.coreutils
-      pkgs.awscli2
-      pkgs.claude-code
-      pkgs.chezmoi
-      # Cloudflare Tunnel のクライアント。`cloudflared tunnel ...` を PATH 上に置く
-      pkgs.cloudflared
+      # du 代替。ディスク使用量を視覚的に表示（アトリビュート名は dust、中身は du-dust）
+      pkgs.dust
+      # ls 代替。アイコン・git 状態・tree 表示
+      pkgs.eza
+      # find 代替。直感的で速い
+      pkgs.fd
       pkgs.gcc
       pkgs.gh
       pkgs.gogcli
+      # curl 代替の HTTP クライアント
+      pkgs.httpie
       pkgs.jq
       pkgs.just
+      # コンテナ操作の TUI（podman 互換）
+      pkgs.lazydocker
+      # Git 操作の TUI
+      pkgs.lazygit
       pkgs.nano
       pkgs.podman
       pkgs.podman-compose
       pkgs.proton-pass-cli
+      # grep 代替。gitignore を考慮した高速検索（rg）
+      pkgs.ripgrep
+      # sed 代替。直感的な文字列置換
+      pkgs.sd
       pkgs.strace
+      # tldr。man の実用例だけを簡潔に表示
+      pkgs.tealdeer
       pkgs.tree
+      # ファイル変更を検知してコマンドを自動実行
+      pkgs.watchexec
+      # curl 代替の軽量 HTTP クライアント（Rust 製）
+      pkgs.xh
+      # jq の YAML/XML 版
+      pkgs.yq-go
       pkgs.zellij
       ntn
       redmine-go
