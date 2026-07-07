@@ -31,6 +31,8 @@ in
       pkgs.awscli2
       # netstat 代替。帯域をプロセス別に可視化する
       pkgs.bandwhich
+      # bzip2 展開・圧縮（環境未導入のため追加）
+      pkgs.bzip2
       # yazi プレビュー: 画像をターミナル描画（sixel/kitty 非対応端末向けフォールバック）
       pkgs.chafa
       pkgs.chezmoi
@@ -41,8 +43,8 @@ in
       # ファイル名を端末で ? や 8 進エスケープに化けさせる（最新版でも未修正）。
       # 成熟した GNU coreutils を PATH 先頭(nix-profile)に置き uutils(/usr/bin) を上書きする。
       pkgs.coreutils
-      # /usr/bin/curl を nix 管理版で上書きし、バージョンを固定する
-      pkgs.curl
+      # DNS 調査。dig / nslookup / host（環境未導入のため追加）
+      pkgs.dnsutils
       # du 代替。ディスク使用量を視覚的に表示（アトリビュート名は dust、中身は du-dust）
       pkgs.dust
       # yazi プレビュー: 動画サムネイル生成（headless で軽量）
@@ -56,26 +58,52 @@ in
       pkgs.imagemagick
       pkgs.jq
       pkgs.just
+      # traceroute+ping の実況版。ネット障害切り分け（環境未導入のため追加）
+      pkgs.mtr
       pkgs.nano
+      # ポートスキャン。ncat も付属（環境未導入のため追加）
+      pkgs.nmap
       # yazi プレビュー: 書庫(zip/7z 等)の中身表示（7z コマンド）
       pkgs.p7zip
+      # lspci。PCI デバイス一覧（環境未導入のため追加）
+      pkgs.pciutils
+      # 並列 gzip（環境未導入のため追加）
+      pkgs.pigz
       pkgs.podman
       pkgs.podman-compose
       # yazi プレビュー: PDF のサムネイル生成（pdftoppm）
       pkgs.poppler-utils
       pkgs.proton-pass-cli
+      # クラウドストレージ同期（環境未導入のため追加）
+      pkgs.rclone
       # sed 代替。直感的な文字列置換
       pkgs.sd
+      # nc の高機能版。ポートフォワード等（環境未導入のため追加）
+      pkgs.socat
       pkgs.strace
+      # パケットキャプチャ（環境未導入のため追加）
+      pkgs.tcpdump
+      # 経路調査（環境未導入のため追加）
+      pkgs.traceroute
       pkgs.tree
+      # rar/zip/7z を展開（free。環境未導入のため追加）
+      pkgs.unar
+      # zip 展開（環境未導入のため追加）
+      pkgs.unzip
+      # lsusb。USB デバイス一覧（環境未導入のため追加）
+      pkgs.usbutils
       # ファイル変更を検知してコマンドを自動実行
       pkgs.watchexec
-      # /usr/bin/wget を nix 管理版で上書きし、バージョンを固定する
-      pkgs.wget
+      # ドメイン/IP の登録情報（環境未導入のため追加）
+      pkgs.whois
       # curl 代替の軽量 HTTP クライアント（Rust 製）
       pkgs.xh
       # jq の YAML/XML 版
       pkgs.yq-go
+      # zip 作成（環境未導入のため追加）
+      pkgs.zip
+      # 高速圧縮（環境未導入のため追加）
+      pkgs.zstd
       ntn
       redmine-go
       gog-setup-credentials
