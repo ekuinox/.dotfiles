@@ -165,13 +165,11 @@ in
       enableBashIntegration = true;
     };
 
-    # ターミナルマルチプレクサ。bash 統合で対話シェル起動時に自動起動する。
-    # attachExistingSession=true で新しい端末は既存セッションへ接続する
-    # （無効だと端末を開くたびに別セッションが増えてしまう）。
+    # ターミナルマルチプレクサ。パッケージは入れるが、対話シェル起動時の自動起動は
+    # 無効化している（enableBashIntegration=false）。使うときは手動で `zellij` を実行する。
     zellij = {
       enable = true;
-      enableBashIntegration = true;
-      attachExistingSession = true;
+      enableBashIntegration = false;
     };
 
     bash = {
