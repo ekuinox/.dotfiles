@@ -165,13 +165,11 @@ in
       enableBashIntegration = true;
     };
 
-    # ターミナルマルチプレクサ。bash 統合で対話シェル起動時に自動起動する。
-    # attachExistingSession=true で新しい端末は既存セッションへ接続する
-    # （無効だと端末を開くたびに別セッションが増えてしまう）。
+    # ターミナルマルチプレクサ。パッケージは入れるが、対話シェル起動時の自動起動は
+    # 無効化している（enableBashIntegration=false）。使うときは手動で `zellij` を実行する。
     zellij = {
       enable = true;
-      enableBashIntegration = true;
-      attachExistingSession = true;
+      enableBashIntegration = false;
     };
 
     bash = {
@@ -241,7 +239,17 @@ in
       Wants = [ "network-online.target" ];
     };
     Service = {
-      ExecStart = "${paseo}/bin/paseo start --foreground";
+      # ダウンロードはブラウザが daemon の HTTP エンドポイントへ直接アクセスする
+      # 方式のため、0.0.0.0 待ち受け時はブラウザに広告する LAN IP が必要になる。
+      # paseo の既定選択(インターフェイス名の辞書順で最初の非内部 IPv4)は
+      # Docker ブリッジ(br-*, 172.19.0.1 等)を誤選択するので、既定ルートの
+      # 送信元アドレスから起動時に動的解決して PASEO_PRIMARY_LAN_IP に渡す。
+      # インターフェイス名に依存せず、DHCP や eth0→wlan0 の切り替えにも追従し、
+      # IP の直書きを避けられる。
+      ExecStart = pkgs.writeShellScript "paseo-start" ''
+        export PASEO_PRIMARY_LAN_IP="$(${pkgs.iproute2}/bin/ip -4 route get 1.1.1.1 2>/dev/null | ${pkgs.gnugrep}/bin/grep -oP 'src \K\S+')"
+        exec ${paseo}/bin/paseo start --foreground
+      '';
       Restart = "on-failure";
       RestartSec = 5;
       Environment = [
