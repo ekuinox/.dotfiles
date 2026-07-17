@@ -4,11 +4,13 @@ CLAUDE.md
 docs
 docs/**
 
-# PowerShell プロファイルは Windows 専用。他 OS では入れ物ごと無視する
+# Windows 専用。他 OS では無視する
 {{ if ne .chezmoi.os "windows" }}
 Documents
 Documents/**
 .claude/init_env.sh
+# WezTerm 設定は Windows ネイティブアプリ用（WSL 側の ~ には展開しない）
+.wezterm.lua
 {{ end }}
 
 # nix/home-manager は Windows 非対象。Windows でのみ無視する
