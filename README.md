@@ -67,6 +67,8 @@ chezmoi 展開後、nix と home-manager を別途セットアップする。
    home-manager switch --flake ~/.config/home-manager#<host>
    ```
 
+構成は `common.nix`（全ホスト共通）と `hosts/<host>.nix`（ホスト固有）に分かれる。`flake.nix` の `hosts` がホストごとに読み込むモジュールを定義する。`yomogi`（自宅 Pi の個体名）は `hosts/pi.nix` を継承したうえで door-lock 中継の設定を足す構成のため、pi 系で共通化したい設定は `hosts/pi.nix` に書けば yomogi にも反映される。
+
 `.bashrc` は home-manager（`programs.bash`）が所有する。既存の `.bashrc` がある初回は `-b bak` で退避される。
 
 ### 共通の補足
