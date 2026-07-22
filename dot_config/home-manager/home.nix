@@ -251,6 +251,18 @@ in
     };
   };
 
+  # mube スマートロックの中継スタック（Caddy ヘッダ削ぎプロキシ + cloudflared tunnel）。
+  # モジュール実体は flake input の mube リポジトリ側。中継役は自宅 Pi の個体 yomogi のみ
+  # （汎用の pi では有効にしない）。
+  # 秘密物（~/.cloudflared/cert.pem と <tunnel-id>.json）は手動配置。linger 必須。
+  services.mube-door-lock = {
+    enable = host == "yomogi";
+    hostname = "door-lock-private.ekuinox.dev";
+    tunnelId = "b45a50d5-24f6-4732-9568-7971f9772504";
+    picoOrigin = "http://172.20.10.13:80"; # Pico の IP が変わったらここを更新して hms
+    protocol = "http2"; # この回線は QUIC(UDP 7844) が塞がれているため必須
+  };
+
   # Paseo デーモンを常駐させる。状態は $HOME 配下 (~/.paseo, ~/.claude) に
   # 永続するため、再起動でエージェント（セッション）は保持され、進行中ターン
   # だけが中断される。systemd user の環境は最小限で .bashrc も /etc/profile も
