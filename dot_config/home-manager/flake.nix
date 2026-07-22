@@ -14,29 +14,44 @@
     # herdr（AI コーディングエージェント用ターミナルワークスペース管理）。paseo と
     # 同じく flake が各 system 向け package を公開しているので home.packages に入れる。
     # nixpkgs は herdr 側のピンに従わせる（follows で上書きしない）。wsl 限定のため
-    # home.nix 側で host == "wsl" のときだけ参照する（pi では遅延評価でビルドされない）。
+    # hosts/wsl.nix でのみ参照する（pi/yomogi では遅延評価でビルドされない）。
     herdr.url = "github:ogulcancelik/herdr/v0.7.4";
     # mube スマートロックの中継スタック（Caddy ヘッダ削ぎプロキシ + cloudflared）を
-    # home-manager モジュールとして提供する。yomogi ホストのみ有効化（home.nix 参照）。
+    # home-manager モジュールとして提供する。yomogi の modules でのみ import・有効化（hosts/yomogi.nix 参照）。
     mube.url = "github:ekuinox/mube";
   };
 
   outputs = { nixpkgs, home-manager, paseo, herdr, mube, ... }:
     let
-      # ホスト名 -> system。home.nix は全ホスト共通で、ホスト間の差分は
-      # system と、home.nix に渡すホスト名（hms エイリアスの flake 参照先）だけ。
+      # ホスト名 -> { system, modules }。共通設定は common.nix、ホスト固有差分は
+      # hosts/*.nix に置く。yomogi は pi.nix を継承（modules に含める）しつつ
+      # 個体固有の door-lock 設定（yomogi.nix）と mube モジュールを足す。
       hosts = {
-        wsl = "x86_64-linux";
-        pi = "aarch64-linux"; # Raspberry Pi (Ubuntu, aarch64) の汎用ホスト
-        # yomogi: 自宅 Pi の個体名。構成は pi を継承（同じ home.nix・同じ system）しつつ、
-        # この個体だけ mube door-lock の中継役を担う（home.nix の host 条件参照）。
-        yomogi = "aarch64-linux";
-        # 将来: mac = "aarch64-darwin";
+        wsl = {
+          system = "x86_64-linux";
+          modules = [ ./hosts/wsl.nix ];
+        };
+        # Raspberry Pi (Ubuntu, aarch64) の汎用ホスト
+        pi = {
+          system = "aarch64-linux";
+          modules = [ ./hosts/pi.nix ];
+        };
+        # yomogi: 自宅 Pi の個体名。pi.nix を継承し、door-lock 中継役の設定を追加する。
+        # mube.homeManagerModules.default は services.mube-door-lock オプションの提供元で、
+        # yomogi だけが必要とするためここでのみ import する（wsl/pi はオプションを持たない）。
+        yomogi = {
+          system = "aarch64-linux";
+          modules = [ ./hosts/pi.nix ./hosts/yomogi.nix mube.homeManagerModules.default ];
+        };
+        # 将来: mac = { system = "aarch64-darwin"; modules = [ ./hosts/mac.nix ]; };
       };
-      mkHome = host: system:
+      mkHome = host: { system, modules }:
         home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.${system};
-          modules = [ ./home.nix mube.homeManagerModules.default ];
+          modules = [ ./common.nix ] ++ modules;
+          # host は hms エイリアスの flake 参照先。paseo/herdr は system 別 package。
+          # herdr を参照するのは wsl.nix のみ。pi/yomogi のモジュールは herdr を
+          # 引数に取らないため、遅延評価で aarch64 版 herdr は forced されずビルドされない。
           extraSpecialArgs = {
             inherit host;
             paseo = paseo.packages.${system}.default;

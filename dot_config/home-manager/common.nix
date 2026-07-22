@@ -1,4 +1,4 @@
-{ config, pkgs, lib, host, paseo, herdr, ... }:
+{ config, pkgs, lib, host, paseo, ... }:
 let
   # nixpkgs に無い自前パッケージは packages/ 配下に 1 ファイルずつ分離し、
   # callPackage で nixpkgs の依存（stdenv/fetchurl 等）を自動注入して読み込む。
@@ -110,8 +110,7 @@ in
       docker-compat
       docker-compose-compat
       paseo
-      # herdr（エージェント多重化 TUI）は wsl のみ。pi では参照しない。
-    ] ++ lib.optional (host == "wsl") herdr;
+    ];
     sessionVariables = { };
 
     # nano のシンタックスハイライト。scopatz/nanorc プリセット（118 言語）を読み込む
@@ -139,30 +138,6 @@ in
       compose_warning_logs = false
     '';
 
-    # herdr（エージェント多重化 TUI）の設定。プレーンな TOML なので nix で直接生成する。
-    # herdr 本体と同じく wsl 限定（pi では enable=false でファイルを置かない）。
-    file.".config/herdr/config.toml" = {
-      enable = host == "wsl";
-      text = ''
-        onboarding = false
-
-        [terminal]
-        default_shell = "bash"
-        shell_mode = "auto"
-        new_cwd = "follow"
-
-        [keys]
-        prefix = "ctrl+b"
-        next_tab = "prefix+n"
-        previous_tab = "prefix+p"
-
-        [theme]
-        name = "catppuccin"
-
-        [ui.toast]
-        delivery = "herdr"
-      '';
-    };
   };
 
   programs = {
@@ -249,18 +224,6 @@ in
         os.disabled = false;
       };
     };
-  };
-
-  # mube スマートロックの中継スタック（Caddy ヘッダ削ぎプロキシ + cloudflared tunnel）。
-  # モジュール実体は flake input の mube リポジトリ側。中継役は自宅 Pi の個体 yomogi のみ
-  # （汎用の pi では有効にしない）。
-  # 秘密物（~/.cloudflared/cert.pem と <tunnel-id>.json）は手動配置。linger 必須。
-  services.mube-door-lock = {
-    enable = host == "yomogi";
-    hostname = "door-lock-private.ekuinox.dev";
-    tunnelId = "b45a50d5-24f6-4732-9568-7971f9772504";
-    picoOrigin = "http://172.20.10.13:80"; # Pico の IP が変わったらここを更新して hms
-    protocol = "http2"; # この回線は QUIC(UDP 7844) が塞がれているため必須
   };
 
   # Paseo デーモンを常駐させる。状態は $HOME 配下 (~/.paseo, ~/.claude) に
