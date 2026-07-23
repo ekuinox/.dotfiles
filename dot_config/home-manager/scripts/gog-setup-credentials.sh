@@ -1,5 +1,5 @@
 # gog-setup-credentials の本体。
-# home.nix の pkgs.writeShellApplication が text として読み込む（builtins.readFile）。
+# common.nix の pkgs.writeShellApplication が text として読み込む（builtins.readFile）。
 # シバンと set -o errexit/nounset/pipefail、runtimeInputs の PATH は
 # writeShellApplication 側で付与されるため、ここには書かない。
 #
