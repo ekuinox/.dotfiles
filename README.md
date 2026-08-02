@@ -5,8 +5,9 @@ chezmoi で管理する個人 dotfiles。
 
 ## 管理対象
 
-- `~/.gitconfig`（`[user]` のみ。マシン固有設定は `~/.gitconfig.local` に置く）
+- `~/.gitconfig`（`[user]` と署名設定。マシン固有設定は `~/.gitconfig.local` に置く）
 - `~/.config/git/ignore`
+- `~/.config/git/allowed_signers`（コミット署名の検証に使う公開鍵の一覧）
 - `~/.config/home-manager/`（nix / home-manager 設定。Linux / macOS のみ）
 - `~/.config/nix/nix.conf`（flakes 有効化。Linux / macOS のみ）
 - `~/.claude/CLAUDE.md`, `~/.claude/hooks/`, `~/.claude/skills/`
@@ -71,9 +72,25 @@ chezmoi 展開後、nix と home-manager を別途セットアップする。
 
 `.bashrc` は home-manager（`programs.bash`）が所有する。既存の `.bashrc` がある初回は `-b bak` で退避される。
 
+### コミット署名（SSH 鍵）
+
+`~/.gitconfig` で `commit.gpgsign` を有効にしており、`gpg.format = ssh` により GPG ではなく SSH 鍵で署名する。ホストごとに 1 回だけ次を実行する。
+
+```sh
+git-setup-signing
+```
+
+`~/.ssh/id_ed25519` が無ければ生成し、GitHub へ signing key として登録し、使い捨てリポジトリで署名と検証が通るところまで確認する。何度実行してもよい。
+
+新しいホストでは、初回に `dot_config/git/allowed_signers` へそのホストの公開鍵を 1 行足す必要がある。`git-setup-signing` が追加すべき行をそのまま出力するので、chezmoi ソースに貼って `chezmoi apply` してから再実行する。SSH 鍵は GPG と違い鍵自体に UID を持たないため、この「メールアドレス → 公開鍵」の対応表が無いと検証ができない。公開鍵しか含まないためリポジトリで管理して問題ない。
+
+GitHub への自動登録には `gh` のトークンに `admin:ssh_signing_key` スコープが必要。無い場合はコマンドが公開鍵と手順を出力するので、`gh auth refresh -s admin:ssh_signing_key` のうえ再実行するか、手動で登録する。認証用の鍵として登録済みでも、署名用は別枠のため改めて登録が必要。
+
+署名したくないリポジトリでは `git config commit.gpgsign false` を個別に設定する。
+
 ### 共通の補足
 
-- このリポジトリは private のため、clone には GitHub 認証が必要。`gh auth login` の対話で「Authenticate Git with your GitHub credentials?」に Yes を選ぶと、chezmoi が system の git 経由で認証付き clone できる（このために git も入れている）。
+- このリポジトリは public のため、秘密情報（鍵・トークン・資格情報）は一切含めない。`allowed_signers` に置くのは公開鍵のみ。clone に認証は不要だが、`gh auth login` の対話で「Authenticate Git with your GitHub credentials?」に Yes を選んでおくと push 時の認証が通る（このために git も入れている）。
 - `sourceDir`（`~/.dotfiles`）はリポジトリの `.chezmoi.toml.tmpl` から `chezmoi init` が自動生成するため、設定の手書きは不要。
 - 初回の chezmoi 自体は公式インストーラで入る（ブートストラップ用）。Linux / macOS では claude-code と chezmoi を home-manager（nix）が `home.packages` で管理するため、`home-manager switch` 後は nix 側の chezmoi も利用できる。
 - mise 本体は home-manager（`programs.mise`）が入れるが、グローバルの tool バージョンは固定しない方針のため mise の `config.toml` は chezmoi 管理対象外。node 等が必要ならプロジェクト単位の `mise.toml` 等で都度入れる。

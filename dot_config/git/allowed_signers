@@ -1,0 +1,16 @@
+# git のコミット署名を検証するための「メールアドレス -> 公開鍵」の対応表。
+# ~/.gitconfig の gpg.ssh.allowedSignersFile から参照される。
+# 公開鍵しか含まないため、public なこのリポジトリで管理して問題ない。
+#
+# 自分の鍵のみを管理する。他人のコミットの検証は GitHub の Verified バッジに委ねる。
+# ホストごとに鍵が異なるため、ホストを増やしたら 1 行足す。全ホストぶんを 1 ファイルに
+# 集約することで、あるホストで作ったコミットを別のホストでも検証できる。
+# 行を足したら chezmoi apply で反映する（git-setup-signing は必要な行を出力するだけで、
+# このファイルは書き換えない。二重管理を避けるため）。
+#
+# 書式: <principal> [options] <keytype> <base64> [comment]
+#   principal は署名検証時に author のメールアドレスと突き合わせられる。
+#   namespaces="git" はこの鍵を git の署名検証にのみ使うことを明示する。
+
+# wsl (Hizake)
+depkey@me.com namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOj7G1qzJ0yqUrCY+cKk0BjLS351V8wN4cXyZOi+uDod ekuinox@Hizake
