@@ -5,6 +5,7 @@ let
   redmine-go = pkgs.callPackage ./packages/redmine-go.nix { };
   ntn = pkgs.callPackage ./packages/ntn.nix { };
   gog-setup-credentials = pkgs.callPackage ./packages/gog-setup-credentials.nix { };
+  git-setup-signing = pkgs.callPackage ./packages/git-setup-signing.nix { };
   # docker は導入せず podman へ委譲する。エイリアスは対話シェルにしか効かず
   # justfile やスクリプトの sh からは見えないため、PATH 上に実体のラッパーを置く。
   docker-compat = pkgs.writeShellScriptBin "docker" ''
@@ -107,6 +108,7 @@ in
       ntn
       redmine-go
       gog-setup-credentials
+      git-setup-signing
       docker-compat
       docker-compose-compat
       paseo

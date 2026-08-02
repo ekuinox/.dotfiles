@@ -1,6 +1,8 @@
 [user]
 	email = depkey@me.com
 	name = ekuinox
+	# SSH 署名の鍵。パスは全ホストで同一で、鍵の実体だけがホストごとに違う。
+	signingkey = ~/.ssh/id_ed25519.pub
 
 # GitHub 認証は gh の credential helper に委譲する。
 # 絶対パスではなく PATH 上の gh を呼ぶことで OS 非依存にする
@@ -11,6 +13,21 @@
 [credential "https://gist.github.com"]
 	helper =
 	helper = !gh auth git-credential
+
+# コミットとタグを SSH 鍵で署名する。gpg.format=ssh のとき、git は gpg ではなく
+# ssh-keygen を使って署名する（コミットヘッダ名は歴史的経緯で gpgsig のまま）。
+# 署名したくないリポジトリでは `git config commit.gpgsign false` で個別に無効化する。
+[commit]
+	gpgsign = true
+[tag]
+	gpgsign = true
+[gpg]
+	format = ssh
+# SSH 鍵は GPG と違い鍵自体に UID を持たないため、「メールアドレス -> 公開鍵」の
+# 対応表を外に持つ必要がある。これが無いと署名はできるが検証が一切できず、
+# git log --show-signature は署名済みのコミットを "No signature" と表示する。
+[gpg "ssh"]
+	allowedSignersFile = ~/.config/git/allowed_signers
 
 [include]
 	path = ~/.gitconfig.local
