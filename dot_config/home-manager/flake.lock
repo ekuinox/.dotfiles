@@ -128,11 +128,11 @@
         "nixpkgs": "nixpkgs_4"
       },
       "locked": {
-        "lastModified": 1785936650,
-        "narHash": "sha256-viE2qqTPY8soUfcDHnTL5R2JvbgvKVoRGnbWErsrQMU=",
+        "lastModified": 1785940799,
+        "narHash": "sha256-1kp90sFlWQ0CUVN1hyrF2HZvuJnZT0SHEucBzk+0PVA=",
         "owner": "getpaseo",
         "repo": "paseo",
-        "rev": "d227ff3e83cd7753034b54ad48d057e8af160133",
+        "rev": "1c43e4eea1de4e0bb6ade7b471fbfa857d9550b0",
         "type": "github"
       },
       "original": {
