@@ -1,4 +1,4 @@
-{ config, pkgs, lib, host, paseo, ... }:
+{ pkgs, lib, host, ... }:
 let
   # nixpkgs に無い自前パッケージは packages/ 配下に 1 ファイルずつ分離し、
   # callPackage で nixpkgs の依存（stdenv/fetchurl 等）を自動注入して読み込む。
@@ -6,14 +6,6 @@ let
   ntn = pkgs.callPackage ./packages/ntn.nix { };
   gog-setup-credentials = pkgs.callPackage ./packages/gog-setup-credentials.nix { };
   git-setup-signing = pkgs.callPackage ./packages/git-setup-signing.nix { };
-  # docker は導入せず podman へ委譲する。エイリアスは対話シェルにしか効かず
-  # justfile やスクリプトの sh からは見えないため、PATH 上に実体のラッパーを置く。
-  docker-compat = pkgs.writeShellScriptBin "docker" ''
-    exec ${pkgs.podman}/bin/podman "$@"
-  '';
-  docker-compose-compat = pkgs.writeShellScriptBin "docker-compose" ''
-    exec ${pkgs.podman-compose}/bin/podman-compose "$@"
-  '';
 in
 {
   nixpkgs.config.allowUnfreePredicate = pkg:
@@ -40,10 +32,6 @@ in
       pkgs.claude-code
       # Cloudflare Tunnel のクライアント。`cloudflared tunnel ...` を PATH 上に置く
       pkgs.cloudflared
-      # Ubuntu 26.04 標準の uutils ls はロケールを見ず、日本語など非 ASCII の
-      # ファイル名を端末で ? や 8 進エスケープに化けさせる（最新版でも未修正）。
-      # 成熟した GNU coreutils を PATH 先頭(nix-profile)に置き uutils(/usr/bin) を上書きする。
-      pkgs.coreutils
       # DNS 調査。dig / nslookup / host（環境未導入のため追加）
       pkgs.dnsutils
       # du 代替。ディスク使用量を視覚的に表示（アトリビュート名は dust、中身は du-dust）
@@ -66,12 +54,8 @@ in
       pkgs.nmap
       # yazi プレビュー: 書庫(zip/7z 等)の中身表示（7z コマンド）
       pkgs.p7zip
-      # lspci。PCI デバイス一覧（環境未導入のため追加）
-      pkgs.pciutils
       # 並列 gzip（環境未導入のため追加）
       pkgs.pigz
-      pkgs.podman
-      pkgs.podman-compose
       # yazi プレビュー: PDF のサムネイル生成（pdftoppm）
       pkgs.poppler-utils
       pkgs.proton-pass-cli
@@ -81,18 +65,13 @@ in
       pkgs.sd
       # nc の高機能版。ポートフォワード等（環境未導入のため追加）
       pkgs.socat
-      pkgs.strace
       # パケットキャプチャ（環境未導入のため追加）
       pkgs.tcpdump
-      # 経路調査（環境未導入のため追加）
-      pkgs.traceroute
       pkgs.tree
       # rar/zip/7z を展開（free。環境未導入のため追加）
       pkgs.unar
       # zip 展開（環境未導入のため追加）
       pkgs.unzip
-      # lsusb。USB デバイス一覧（環境未導入のため追加）
-      pkgs.usbutils
       # ファイル変更を検知してコマンドを自動実行
       pkgs.watchexec
       # ドメイン/IP の登録情報（環境未導入のため追加）
@@ -109,35 +88,20 @@ in
       redmine-go
       gog-setup-credentials
       git-setup-signing
-      docker-compat
-      docker-compose-compat
-      paseo
     ];
     sessionVariables = { };
+
+    # bash / zsh の両方へ反映される共通エイリアス。
+    shellAliases = {
+      # home-manager switch。ホスト鍵は flake から渡される現ホスト名を使う。
+      hms = "home-manager switch --flake ~/.config/home-manager#${host}";
+    };
 
     # nano のシンタックスハイライト。scopatz/nanorc プリセット（118 言語）を読み込む
     file.".nanorc".text = ''
       include "${pkgs.nanorc}/share/*.nanorc"
       # nix は scopatz プリセットに無いため nano 同梱の公式定義を追加する
       include "${pkgs.nano}/share/nano/nix.nanorc"
-    '';
-
-    # rootless podman 用の containers 設定。非 NixOS では /etc/containers を
-    # 誰も用意しないため、ユーザー側 (~/.config/containers) を home-manager で管理する。
-    # イメージ署名ポリシー。これが無いと "no policy.json file found" で起動できない
-    file.".config/containers/policy.json".text = ''
-      {
-        "default": [{ "type": "insecureAcceptAnything" }]
-      }
-    '';
-    # 短縮名 (hello-world 等) を docker.io から解決できるようにする
-    file.".config/containers/registries.conf".text = ''
-      unqualified-search-registries = ["docker.io"]
-    '';
-    # docker compose ... 実行時の "Executing external compose provider" 警告を抑制する
-    file.".config/containers/containers.conf".text = ''
-      [engine]
-      compose_warning_logs = false
     '';
 
   };
@@ -150,7 +114,7 @@ in
     # top 代替のリッチなシステムモニタ
     btop.enable = true;
     # ls 代替。enableBashIntegration を有効にすると ls→eza エイリアスが張られ
-    # coreutils の ls を上書きしてしまうため、意図的に enable のみとする。
+    # 既定の ls を上書きしてしまうため、意図的に enable のみとする。
     eza.enable = true;
     # find 代替。直感的で速い
     fd.enable = true;
@@ -191,10 +155,6 @@ in
           . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
         fi
       '';
-      shellAliases = {
-        # home-manager switch。ホスト鍵は flake から渡される現ホスト名を使う。
-        hms = "home-manager switch --flake ~/.config/home-manager#${host}";
-      };
     };
 
     mise = {
@@ -226,39 +186,5 @@ in
         os.disabled = false;
       };
     };
-  };
-
-  # Paseo デーモンを常駐させる。状態は $HOME 配下 (~/.paseo, ~/.claude) に
-  # 永続するため、再起動でエージェント（セッション）は保持され、進行中ターン
-  # だけが中断される。systemd user の環境は最小限で .bashrc も /etc/profile も
-  # 読まないため、デーモンが生成するエージェント (claude 等) 用に PATH を明示する。
-  # nix 本体 (nix, nix-build 等) は ~/.nix-profile ではなく multi-user の default
-  # プロファイル配下にあるので、エージェントから nix が引けるよう明示的に含める。
-  # ヘッドレス運用で未ログイン時も動かすには `loginctl enable-linger` が別途必要。
-  systemd.user.services.paseo = {
-    Unit = {
-      Description = "Paseo daemon (control AI coding agents remotely)";
-      After = [ "network-online.target" ];
-      Wants = [ "network-online.target" ];
-    };
-    Service = {
-      # ダウンロードはブラウザが daemon の HTTP エンドポイントへ直接アクセスする
-      # 方式のため、0.0.0.0 待ち受け時はブラウザに広告する LAN IP が必要になる。
-      # paseo の既定選択(インターフェイス名の辞書順で最初の非内部 IPv4)は
-      # Docker ブリッジ(br-*, 172.19.0.1 等)を誤選択するので、既定ルートの
-      # 送信元アドレスから起動時に動的解決して PASEO_PRIMARY_LAN_IP に渡す。
-      # インターフェイス名に依存せず、DHCP や eth0→wlan0 の切り替えにも追従し、
-      # IP の直書きを避けられる。
-      ExecStart = pkgs.writeShellScript "paseo-start" ''
-        export PASEO_PRIMARY_LAN_IP="$(${pkgs.iproute2}/bin/ip -4 route get 1.1.1.1 2>/dev/null | ${pkgs.gnugrep}/bin/grep -oP 'src \K\S+')"
-        exec ${paseo}/bin/paseo start --foreground
-      '';
-      Restart = "on-failure";
-      RestartSec = 5;
-      Environment = [
-        "PATH=${config.home.profileDirectory}/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin:/bin"
-      ];
-    };
-    Install.WantedBy = [ "default.target" ];
   };
 }
