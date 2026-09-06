@@ -462,7 +462,9 @@ zsh -l -i -c 'type hms; command -v starship zoxide mise fzf home-manager; echo $
 
 期待: `hms` がエイリアスとして表示され、各コマンドが `~/.nix-profile/bin/` 配下で解決され、`~/.cargo/bin` が PATH に含まれる。
 
-- [ ] **Step 9: コミットする**
+- [ ] **Step 9: 署名鍵を用意してからコミットする**
+
+Task 1 の `chezmoi apply` で `~/.gitconfig` に `commit.gpgsign = true` が入る一方、署名鍵 `~/.ssh/id_ed25519` は Task 5 で作られる。鍵が無い状態でコミットすると `error: Load key ... No such file or directory` で失敗するため、**先に Task 5 を最後まで実施してから**このステップに戻る。Task 5 が依存する `git-setup-signing` は Step 7 の switch で PATH に入っているため、この順序で回る。
 
 ```bash
 cd "$HOME/.dotfiles"
@@ -560,6 +562,8 @@ MSG
 ---
 
 ### Task 5: yuri のコミット署名鍵を用意する
+
+**実施順序:** Task 3 の Step 8 が終わった直後に実施する。Task 1 の `chezmoi apply` で `commit.gpgsign = true` が有効になっており、署名鍵が無いと Task 3 以降のコミットがすべて失敗するため。
 
 **Files:**
 - Modify: `dot_config/git/allowed_signers`
