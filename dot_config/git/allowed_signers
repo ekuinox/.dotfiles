@@ -14,3 +14,6 @@
 
 # wsl (Hizake)
 depkey@me.com namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOj7G1qzJ0yqUrCY+cKk0BjLS351V8wN4cXyZOi+uDod ekuinox@Hizake
+
+# yuri (MacBook Air)
+depkey@me.com namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHkUGGawQ3v8FDLt9rjtz9v64NOzjGUqRXxATATzTSE+ ekuinox@MacBookAir.elecom
