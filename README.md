@@ -62,13 +62,18 @@ chezmoi 展開後、nix と home-manager を別途セットアップする。
    nix run home-manager/master -- switch -b bak --flake ~/.config/home-manager#wsl
    ```
 
-3. 2 回目以降は home-manager が PATH に入るため、次で反映する（`<host>` は対象マシンの鍵。現状は `wsl`）。
+3. 2 回目以降は home-manager が PATH に入るため、次で反映する（`<host>` は対象マシンの鍵。現状は `wsl` / `pi` / `yomogi` / `yuri`）。
 
    ```sh
    home-manager switch --flake ~/.config/home-manager#<host>
    ```
 
-構成は `common.nix`（全ホスト共通）と `hosts/<host>.nix`（ホスト固有）に分かれる。`flake.nix` の `hosts` がホストごとに読み込むモジュールを定義する。`yomogi`（自宅 Pi の個体名）は `hosts/pi.nix` を継承したうえで door-lock 中継の設定を足す構成のため、pi 系で共通化したい設定は `hosts/pi.nix` に書けば yomogi にも反映される。
+構成は `common.nix`（OS を問わない全ホスト共通）と `hosts/<host>.nix`（ホスト固有）に分かれる。`flake.nix` の `hosts` がホストごとに読み込むモジュールを定義する。
+
+- `hosts/linux.nix`: Linux 3 ホスト（`wsl` / `pi` / `yomogi`）が共通で読む。systemd ユニット、Linux 限定パッケージ、podman 一式、GNU coreutils はここに置く。これらは darwin で評価が通らないため `common.nix` には置かない。
+- `hosts/pi.nix`: Raspberry Pi 共通。`yomogi` が継承するため、pi 系で共通化したい設定はここに書けば yomogi にも反映される。
+- `hosts/yomogi.nix`: 自宅 Pi の個体名。door-lock 中継の設定を足す。
+- `hosts/yuri.nix`: MacBook Air（Apple Silicon）。macOS の既定シェルに合わせて `programs.zsh` を有効にする。`linux.nix` は読まない。
 
 `.bashrc` は home-manager（`programs.bash`）が所有する。既存の `.bashrc` がある初回は `-b bak` で退避される。
 
@@ -94,6 +99,8 @@ GitHub への自動登録には `gh` のトークンに `admin:ssh_signing_key` 
 - `sourceDir`（`~/.dotfiles`）はリポジトリの `.chezmoi.toml.tmpl` から `chezmoi init` が自動生成するため、設定の手書きは不要。
 - 初回の chezmoi 自体は公式インストーラで入る（ブートストラップ用）。Linux / macOS では claude-code と chezmoi を home-manager（nix）が `home.packages` で管理するため、`home-manager switch` 後は nix 側の chezmoi も利用できる。
 - mise 本体は home-manager（`programs.mise`）が入れるが、グローバルの tool バージョンは固定しない方針のため mise の `config.toml` は chezmoi 管理対象外。node 等が必要ならプロジェクト単位の `mise.toml` 等で都度入れる。
+- macOS では Homebrew と併用する。CLI は home-manager（nix）に寄せ、Homebrew は GUI アプリ（cask）と nixpkgs に無いものだけに使う。両方に同じコマンドを入れると PATH 順で実体が変わり分かりにくくなる。
+- `sourceDir` は全ホストで `~/.dotfiles`。別の場所にリポジトリを置きたい場合は `~/.dotfiles` をそこへのシンボリックリンクにする。
 
 ## winget パッケージ管理（Windows）
 
