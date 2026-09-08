@@ -24,34 +24,40 @@
   outputs = { nixpkgs, home-manager, paseo, herdr, mube, ... }:
     let
       # ホスト名 -> { system, modules }。共通設定は common.nix、ホスト固有差分は
-      # hosts/*.nix に置く。yomogi は pi.nix を継承（modules に含める）しつつ
-      # 個体固有の door-lock 設定（yomogi.nix）と mube モジュールを足す。
+      # hosts/*.nix に置く。linux.nix は Linux 3 ホストが共通で読む（systemd や
+      # Linux 限定パッケージは darwin で評価が通らないため common.nix には置かない）。
+      # yomogi は pi.nix を継承（modules に含める）しつつ、個体固有の door-lock 設定
+      # （yomogi.nix）と mube モジュールを足す。
       hosts = {
         wsl = {
           system = "x86_64-linux";
-          modules = [ ./hosts/wsl.nix ];
+          modules = [ ./hosts/linux.nix ./hosts/wsl.nix ];
         };
         # Raspberry Pi (Ubuntu, aarch64) の汎用ホスト
         pi = {
           system = "aarch64-linux";
-          modules = [ ./hosts/pi.nix ];
+          modules = [ ./hosts/linux.nix ./hosts/pi.nix ];
         };
         # yomogi: 自宅 Pi の個体名。pi.nix を継承し、door-lock 中継役の設定を追加する。
         # mube.homeManagerModules.default は services.mube-door-lock オプションの提供元で、
         # yomogi だけが必要とするためここでのみ import する（wsl/pi はオプションを持たない）。
         yomogi = {
           system = "aarch64-linux";
-          modules = [ ./hosts/pi.nix ./hosts/yomogi.nix mube.homeManagerModules.default ];
+          modules = [ ./hosts/linux.nix ./hosts/pi.nix ./hosts/yomogi.nix mube.homeManagerModules.default ];
         };
-        # 将来: mac = { system = "aarch64-darwin"; modules = [ ./hosts/mac.nix ]; };
+        # yuri: MacBook Air (Apple Silicon)。linux.nix は読まない。
+        yuri = {
+          system = "aarch64-darwin";
+          modules = [ ./hosts/yuri.nix ];
+        };
       };
       mkHome = host: { system, modules }:
         home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.${system};
           modules = [ ./common.nix ] ++ modules;
           # host は hms エイリアスの flake 参照先。paseo/herdr は system 別 package。
-          # herdr を参照するのは wsl.nix のみ。pi/yomogi のモジュールは herdr を
-          # 引数に取らないため、遅延評価で aarch64 版 herdr は forced されずビルドされない。
+          # paseo を参照するのは linux.nix、herdr は wsl.nix のみ。yuri のモジュールは
+          # どちらも引数に取らないため、遅延評価で darwin 版は forced されずビルドされない。
           extraSpecialArgs = {
             inherit host;
             paseo = paseo.packages.${system}.default;
