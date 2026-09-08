@@ -113,8 +113,9 @@ in
     bat.enable = true;
     # top 代替のリッチなシステムモニタ
     btop.enable = true;
-    # ls 代替。enableBashIntegration を有効にすると ls→eza エイリアスが張られ
-    # 既定の ls を上書きしてしまうため、意図的に enable のみとする。
+    # ls 代替。現在の home-manager は enable だけで ls→eza のエイリアスを張るため、
+    # 対話シェルの ls は eza になる。スクリプトや command ls では PATH 上の ls
+    # （Linux では linux.nix が入れる GNU coreutils）が使われる。
     eza.enable = true;
     # find 代替。直感的で速い
     fd.enable = true;
