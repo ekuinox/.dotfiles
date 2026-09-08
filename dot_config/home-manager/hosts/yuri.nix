@@ -4,10 +4,15 @@
 # programs.zsh を有効にして初めて対話シェルへ入る。nushell も同じ理由で
 # programs.nushell を有効にする。
 { config, lib, host, ... }:
-{
+let
   # rustup 管理の cargo / rustc は nix の外にあるため、PATH は home-manager で通す。
-  # 従来は ~/.zshenv の `. "$HOME/.cargo/env"` が担っていた。
-  home.sessionPath = [ "$HOME/.cargo/bin" ];
+  # 従来は ~/.zshenv の `. "$HOME/.cargo/env"` が担っていた。bash / zsh は
+  # home.sessionPath、nushell は programs.nushell.extraEnv と経路が分かれるため、
+  # 片方だけ足して片方を忘れないよう値はここで一度だけ持つ。
+  cargoBin = "${config.home.homeDirectory}/.cargo/bin";
+in
+{
+  home.sessionPath = [ cargoBin ];
 
   programs.zsh = {
     enable = true;
@@ -37,17 +42,9 @@
     # 展開されないため、絶対パスにしたうえでクォートしたものへ差し替える。
     shellAliases.hms = lib.mkForce
       ''home-manager switch --flake "${config.home.homeDirectory}/.config/home-manager#${host}"'';
-    # env.nu。home.sessionPath は nushell に届かないため PATH はここで通す。
-    # ~/.local/bin にはブートストラップ版 chezmoi 等が入る。
+    # env.nu。home.sessionPath は nushell に届かないため、同じ PATH をここでも通す。
     extraEnv = ''
-      $env.PATH = (
-        $env.PATH
-        | prepend [
-            ($nu.home-dir | path join ".cargo" "bin")
-            ($nu.home-dir | path join ".local" "bin")
-          ]
-        | uniq
-      )
+      $env.PATH = ($env.PATH | prepend "${cargoBin}" | uniq)
     '';
   };
 }

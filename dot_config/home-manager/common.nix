@@ -113,9 +113,10 @@ in
     bat.enable = true;
     # top 代替のリッチなシステムモニタ
     btop.enable = true;
-    # ls 代替。現在の home-manager は enable だけで ls→eza のエイリアスを張るため、
-    # 対話シェルの ls は eza になる。スクリプトや command ls では PATH 上の ls
-    # （Linux では linux.nix が入れる GNU coreutils）が使われる。
+    # ls 代替。現在の home-manager は enable だけで bash / zsh に ls→eza の
+    # エイリアスを張るため、その 2 つでは ls が eza になる。nushell 統合だけは
+    # home-manager 側の既定が off のため builtin の ls のまま。スクリプトや
+    # command ls では PATH 上の ls（Linux では linux.nix が入れる GNU coreutils）が使われる。
     eza.enable = true;
     # find 代替。直感的で速い
     fd.enable = true;

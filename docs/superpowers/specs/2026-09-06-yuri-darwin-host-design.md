@@ -50,7 +50,8 @@ Linux 3 ホストが共通で読む。`common.nix` から次を移す。
 
 - `programs.zsh.enable = true`。macOS の既定シェルに乗せることで、starship / zoxide / fzf / mise / direnv / yazi の zsh 統合と `home.shellAliases` の `hms` が home-manager 生成の `.zshrc` に入る
 - `programs.nushell` を有効化する。`exec nu` による自動起動はやめ、使いたいときに手で起動する。管理下に置かないと starship 等の初期化ファイルが生成時の絶対パスを抱えたまま取り残される（Homebrew 版 starship を外した際に実際に壊れた）。`home.shellAliases` は home-manager が nushell にも渡すが、nushell は `#` をコメント開始として扱うため、flake 参照を含む `hms` だけは絶対パスをクォートした形へ `lib.mkForce` で差し替える
-- `home.sessionPath` に `~/.cargo/bin` を追加し、現在 `~/.zshenv` が担っている cargo の PATH 設定を home-manager 側へ引き取る
+- `programs.nushell` の `settings` で `show_banner` と `edit_mode` を既定として固定する
+- `home.sessionPath` に `~/.cargo/bin` を追加し、現在 `~/.zshenv` が担っている cargo の PATH 設定を home-manager 側へ引き取る。`home.sessionPath` は bash / zsh にしか届かないため、nushell には `programs.nushell.extraEnv` で同じパスを通す。値は `hosts/yuri.nix` の `let` で 1 箇所に持ち、片方だけ更新する事故を防ぐ
 
 ### `flake.nix`
 
