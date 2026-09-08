@@ -76,7 +76,7 @@ chezmoi 展開後、nix と home-manager を別途セットアップする。
 - `hosts/yomogi.nix`: 自宅 Pi の個体名。door-lock 中継の設定を足す。
 - `hosts/yuri.nix`: MacBook Air（Apple Silicon）。macOS の既定シェルに合わせて `programs.zsh` を有効にする。`linux.nix` は読まない。
 
-`.bashrc` は home-manager（`programs.bash`）が所有する。yuri では `programs.zsh` も有効なため `.zshrc` と `.zshenv` も home-manager の所有になる。既存のファイルがある初回は `-b bak` で退避される。
+`.bashrc` は home-manager（`programs.bash`）が所有する。yuri では `programs.zsh` と `programs.nushell` も有効なため、`.zshrc` / `.zshenv` と nushell の `config.nu` / `env.nu` も home-manager の所有になる。既存のファイルがある初回は `-b bak` で退避される。
 
 ### コミット署名（SSH 鍵）
 

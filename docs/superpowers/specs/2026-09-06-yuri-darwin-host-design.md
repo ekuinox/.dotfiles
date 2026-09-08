@@ -49,7 +49,7 @@ Linux 3 ホストが共通で読む。`common.nix` から次を移す。
 ### `hosts/yuri.nix`（新規）
 
 - `programs.zsh.enable = true`。macOS の既定シェルに乗せることで、starship / zoxide / fzf / mise / direnv / yazi の zsh 統合と `home.shellAliases` の `hms` が home-manager 生成の `.zshrc` に入る
-- `pkgs.nushell` を追加。`exec nu` による自動起動はやめ、使いたいときに手で起動する
+- `programs.nushell` を有効化する。`exec nu` による自動起動はやめ、使いたいときに手で起動する。管理下に置かないと starship 等の初期化ファイルが生成時の絶対パスを抱えたまま取り残される（Homebrew 版 starship を外した際に実際に壊れた）。`home.shellAliases` は home-manager が nushell にも渡すが、nushell は `#` をコメント開始として扱うため、flake 参照を含む `hms` だけは絶対パスをクォートした形へ `lib.mkForce` で差し替える
 - `home.sessionPath` に `~/.cargo/bin` を追加し、現在 `~/.zshenv` が担っている cargo の PATH 設定を home-manager 側へ引き取る
 
 ### `flake.nix`
@@ -100,4 +100,3 @@ Linux 3 ホストが共通で読む。`common.nix` から次を移す。
 
 - WezTerm 設定の macOS 展開。yuri に WezTerm は入っていない
 - Homebrew の完全撤去。`uv` と GUI アプリ（cask）は引き続き Homebrew で管理する
-- nushell の home-manager 管理（`programs.nushell`）。パッケージとして入れるのみに留める
