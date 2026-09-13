@@ -5,6 +5,9 @@
 # 秘密物（~/.cloudflared/cert.pem と <tunnel-id>.json）は手動配置。linger 必須。
 { ... }:
 {
+  # paseo は pi 系では yomogi だけが持つ（sumomo / aoi はビルド負荷を避けて入れない）。
+  imports = [ ./paseo.nix ];
+
   services.mube-door-lock = {
     enable = true;
     hostname = "door-lock-private.ekuinox.dev";

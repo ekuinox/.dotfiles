@@ -59,22 +59,42 @@ chezmoi 展開後、nix と home-manager を別途セットアップする。
 2. chezmoi 展開で `~/.config/nix/nix.conf`（flakes 有効化）と `~/.config/home-manager` が配置済みなので、初回は home-manager を直接実行して反映する。flakes は nix.conf で有効化済みのため `--extra-experimental-features` は不要。
 
    ```sh
-   nix run home-manager/master -- switch -b bak --flake ~/.config/home-manager#wsl
+   nix run home-manager/master -- switch -b bak --flake ~/.config/home-manager#hizake
    ```
 
-3. 2 回目以降は home-manager が PATH に入るため、次で反映する（`<host>` は対象マシンの鍵。現状は `wsl` / `pi` / `yomogi` / `yuri`）。
+3. 2 回目以降は home-manager が PATH に入るため、次で反映する（`<host>` は対象マシンの個体名。下表を参照）。
 
    ```sh
    home-manager switch --flake ~/.config/home-manager#<host>
    ```
 
-構成は `common.nix`（OS を問わない全ホスト共通）と `hosts/<host>.nix`（ホスト固有）に分かれる。`flake.nix` の `hosts` がホストごとに読み込むモジュールを定義する。
+   `hms` エイリアスがこのコマンドを現ホスト名付きで実行する。
 
-- `hosts/linux.nix`: Linux 3 ホスト（`wsl` / `pi` / `yomogi`）が共通で読む。systemd ユニット、Linux 限定パッケージ、podman 一式、GNU coreutils はここに置く。これらは darwin で評価が通らないため `common.nix` には置かない。
-- `hosts/wsl.nix`: WSL 固有。herdr（AI コーディングエージェント用ターミナルワークスペース管理）を入れて設定する。
-- `hosts/pi.nix`: Raspberry Pi 共通。`yomogi` が継承するため、pi 系で共通化したい設定はここに書けば yomogi にも反映される。
+flake の鍵はマシンの個体名で持つ。`flake.nix` の `hosts` がホストごとに読み込むモジュールを定義する。
+
+| host | system | 種別 | 読むモジュール | paseo |
+| --- | --- | --- | --- | --- |
+| hizake | x86_64-linux | WSL | linux.nix, wsl.nix | あり |
+| ume | x86_64-linux | WSL | linux.nix, wsl.nix | あり |
+| yomogi | aarch64-linux | Raspberry Pi | linux.nix, pi.nix, yomogi.nix, mube モジュール | あり |
+| sumomo | aarch64-linux | Raspberry Pi | linux.nix, pi.nix | なし |
+| aoi | aarch64-linux | Raspberry Pi | linux.nix, pi.nix | なし |
+| yuri | aarch64-darwin | MacBook Air | yuri.nix | あり |
+
+構成は `common.nix`（OS を問わない全ホスト共通）と `hosts/<name>.nix` に分かれる。
+
+- `hosts/linux.nix`: Linux ホストが共通で読む。systemd ユニット、Linux 限定パッケージ、podman 一式、GNU coreutils はここに置く。これらは darwin で評価が通らないため `common.nix` には置かない。
+- `hosts/wsl.nix`: WSL 共通。herdr（AI コーディングエージェント用ターミナルワークスペース管理）を入れて設定する。
+- `hosts/pi.nix`: Raspberry Pi 共通。pi 系で共通化したい設定はここに書けば全 Pi に反映される。
+- `hosts/paseo.nix`: paseo 本体と常駐デーモン。種別ではなく個体ごとに `imports` で取り込む。paseo はビルドが重く、スペックの高くない sumomo / aoi では導入を避けたいため。nix の遅延評価により、読まないホストでは paseo が instantiate すらされない。デーモンの常駐は Linux 限定で、yuri では paseo コマンドが PATH に入るだけになる。
 - `hosts/yomogi.nix`: 自宅 Pi の個体名。door-lock 中継の設定を足す。
 - `hosts/yuri.nix`: MacBook Air（Apple Silicon）。macOS の既定シェルに合わせて `programs.zsh` を有効にする。`linux.nix` は読まない。
+
+汎用の鍵（`wsl` / `pi`）から個体名へ移行したため、古い鍵が焼き込まれた `hms` エイリアスは移行後に一度だけ失敗する。各マシンで次を 1 回手で実行すれば、以後は `hms` が新しい鍵で通る。
+
+```sh
+home-manager switch --flake ~/.config/home-manager#hizake   # 個体名に読み替える
+```
 
 `.bashrc` は home-manager（`programs.bash`）が所有する。yuri では `programs.zsh` と `programs.nushell` も有効なため、`.zshrc` / `.zshenv` と nushell の `config.nu` / `env.nu` も home-manager の所有になる。既存のファイルがある初回は `-b bak` で退避される。
 
