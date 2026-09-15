@@ -12,7 +12,7 @@
 #   principal は署名検証時に author のメールアドレスと突き合わせられる。
 #   namespaces="git" はこの鍵を git の署名検証にのみ使うことを明示する。
 
-# wsl (Hizake)
+# hizake (WSL)
 depkey@me.com namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOj7G1qzJ0yqUrCY+cKk0BjLS351V8wN4cXyZOi+uDod ekuinox@Hizake
 
 # yuri (MacBook Air)
