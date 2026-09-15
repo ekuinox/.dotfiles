@@ -12,8 +12,8 @@ let
   cargoBin = "${config.home.homeDirectory}/.cargo/bin";
 in
 {
-  # paseo は mac にも入れる（デーモン常駐は Linux 限定。hosts/paseo.nix 参照）。
-  imports = [ ./paseo.nix ];
+  # paseo は mac にも入れる（デーモン常駐は Linux 限定。modules/paseo.nix 参照）。
+  imports = [ ../modules/paseo.nix ];
 
   home.sessionPath = [ cargoBin ];
 

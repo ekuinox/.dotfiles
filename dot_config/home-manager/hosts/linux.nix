@@ -4,7 +4,7 @@
 #   - strace / pciutils / usbutils / traceroute は nixpkgs 上で Linux 限定
 #   - podman 一式は macOS だと podman machine(VM) が別途要り、ラッパーが成立しない
 #   - coreutils は Ubuntu の uutils ls 対策であり、macOS では BSD ls を上書きしてしまう
-# paseo はここには置かない。Linux でも sumomo / aoi には入れないため hosts/paseo.nix に分離した。
+# paseo はここには置かない。Linux でも sumomo / aoi には入れないため modules/paseo.nix に分離した。
 { pkgs, ... }:
 let
   # docker は導入せず podman へ委譲する。エイリアスは対話シェルにしか効かず

@@ -10,7 +10,7 @@
     # Paseo（リモートからエージェントを操作する CLI/サーバー）。flake が
     # 各 system 向け package を公開しているのでそれを home.packages に入れる。
     # nixpkgs は paseo 側のピンに従わせる（follows で上書きしない）。
-    # 取り込むのは hosts/paseo.nix のみ（hizake / ume / yomogi / yuri が import する）。
+    # 取り込むのは modules/paseo.nix のみ（hizake / ume / yomogi / yuri が import する）。
     paseo.url = "github:getpaseo/paseo";
     # herdr（AI コーディングエージェント用ターミナルワークスペース管理）。paseo と
     # 同じく flake が各 system 向け package を公開しているので home.packages に入れる。
@@ -29,7 +29,7 @@
       # 個体固有の差分は hosts/<個体名>.nix に置く。linux.nix は Linux ホストが
       # 共通で読む（systemd や Linux 限定パッケージは darwin で評価が通らないため
       # common.nix には置かない）。paseo は重いので pi 系では yomogi だけが持ち、
-      # 取り込みは hosts/paseo.nix の imports で個体ごとに決める。
+      # 取り込みは modules/paseo.nix の imports で個体ごとに決める。
       hosts = {
         # WSL (x86_64) 機
         hizake = {

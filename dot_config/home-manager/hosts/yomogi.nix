@@ -6,7 +6,7 @@
 { ... }:
 {
   # paseo は pi 系では yomogi だけが持つ（sumomo / aoi はビルド負荷を避けて入れない）。
-  imports = [ ./paseo.nix ];
+  imports = [ ../modules/paseo.nix ];
 
   services.mube-door-lock = {
     enable = true;

@@ -4,7 +4,7 @@
 { herdr, ... }:
 {
   # paseo は wsl 機には全部入れる。
-  imports = [ ./paseo.nix ];
+  imports = [ ../modules/paseo.nix ];
 
   # herdr 本体（flake input が公開する package）を PATH に入れる。
   # common.nix の home.packages リストへマージされる。
