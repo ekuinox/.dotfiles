@@ -100,7 +100,6 @@ dockerTools.pullImage {
 pin されている nixpkgs の `pullImage` は `lib.fetchers.withNormalizedHash` で包まれており、
 `hash = "sha256-..."` 形式を受け付ける（`sha256 = ` ではない）。出力は
 `outputHashMode = "flat"` の tar が 1 個。
-```
 
 - [ ] **Step 4: ビルドしてハッシュ不一致で失敗させ、正しい hash を得る**
 
