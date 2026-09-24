@@ -11,6 +11,8 @@
 , nodejs_22
 , makeWrapper
 , jq
+, autoPatchelfHook
+, libuv
 }:
 
 let
@@ -32,7 +34,20 @@ stdenv.mkDerivation {
 
   src = image;
 
-  nativeBuildInputs = [ makeWrapper jq ];
+  nativeBuildInputs = [ makeWrapper jq autoPatchelfHook ];
+
+  # prebuilds は Debian でリンクされているため、nix の動的リンカとクロージャ内の
+  # ライブラリに向け直す。node-pty は libstdc++ / libgcc_s / libutil を、
+  # sherpa-onnx は加えて同梱の libsherpa-onnx-c-api.so / libonnxruntime.so を要求する
+  # （後者は同じディレクトリにあり RUNPATH=$ORIGIN で解決される）。
+  buildInputs = [
+    stdenv.cc.cc.lib
+    libuv
+  ];
+
+  # darwin / win32 / linux-x64 向けの prebuilds は当該環境で解決できなくて当然なので、
+  # 解決できない依存があってもビルドを失敗させない。
+  autoPatchelfIgnoreMissingDeps = true;
 
   # pullImage の出力はイメージ全体の tar。manifest.json が列挙する順に
   # レイヤを重ねて最終的なファイルシステムを再構成する。レイヤのパス形式は
