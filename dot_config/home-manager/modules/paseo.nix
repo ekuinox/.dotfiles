@@ -4,8 +4,20 @@
 # （sumomo / aoi）では導入を避けたいため。nix の遅延評価により、本モジュールを
 # 読まないホストでは paseo が instantiate すらされない。
 { config, pkgs, lib, paseo, ... }:
+let
+  # aarch64-linux（yomogi）では上流の nix パッケージがモノレポ全体を
+  # buildNpmPackage にかけるため、Pi 4 で 30〜60 分・RSS 3.7GB を要する。
+  # 同じ成果物が ghcr.io/getpaseo/paseo の arm64 イメージとして配布されている
+  # ので、そちらを展開したパッケージを使ってビルドを回避する。
+  # x86_64-linux（hizake / ume）と aarch64-darwin（yuri）はビルドが問題に
+  # ならないため、従来どおり flake input をそのまま使う。
+  paseoPkg =
+    if pkgs.stdenv.hostPlatform.system == "aarch64-linux"
+    then pkgs.callPackage ../packages/paseo-image.nix { }
+    else paseo;
+in
 {
-  home.packages = [ paseo ];
+  home.packages = [ paseoPkg ];
 
   # Paseo デーモンを常駐させる。状態は $HOME 配下 (~/.paseo, ~/.claude) に
   # 永続するため、再起動でエージェント（セッション）は保持され、進行中ターン
@@ -32,7 +44,7 @@
       # IP の直書きを避けられる。
       ExecStart = pkgs.writeShellScript "paseo-start" ''
         export PASEO_PRIMARY_LAN_IP="$(${pkgs.iproute2}/bin/ip -4 route get 1.1.1.1 2>/dev/null | ${pkgs.gnugrep}/bin/grep -oP 'src \K\S+')"
-        exec ${paseo}/bin/paseo start --foreground
+        exec ${paseoPkg}/bin/paseo start --foreground
       '';
       Restart = "on-failure";
       RestartSec = 5;
