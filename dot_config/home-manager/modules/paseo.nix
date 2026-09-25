@@ -44,7 +44,7 @@ in
       # IP の直書きを避けられる。
       ExecStart = pkgs.writeShellScript "paseo-start" ''
         export PASEO_PRIMARY_LAN_IP="$(${pkgs.iproute2}/bin/ip -4 route get 1.1.1.1 2>/dev/null | ${pkgs.gnugrep}/bin/grep -oP 'src \K\S+')"
-        exec ${paseoPkg}/bin/paseo start --foreground
+        exec ${paseoPkg}/bin/paseo daemon run
       '';
       Restart = "on-failure";
       RestartSec = 5;
