@@ -5,7 +5,9 @@
 # ghcr は blob の匿名取得を許さず、また必要なハッシュは skopeo が生成する
 # イメージ tar 全体に対するものなので、nix store prefetch-file は使えない。
 # プレースホルダのハッシュで一度ビルドさせ、nix が報告する got: を採る。
-set -euo pipefail
+# -E: ERR trap を関数内の失敗でも発火させる（これが無いと build() 内の失敗で
+# 後片付けが走らず、サイドカーが壊れたまま残る）。
+set -Eeuo pipefail
 
 REPO=getpaseo/paseo
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,8 +17,17 @@ PLACEHOLDER="sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
 
 BACKUP="$(mktemp)"
 cp "$SIDECAR" "$BACKUP"
-restore() { cp "$BACKUP" "$SIDECAR"; rm -f "$BACKUP"; }
-trap 'restore' ERR
+SUCCESS=0
+cleanup() {
+  # 成功していなければサイドカーを元に戻す。EXIT も拾うので、Ctrl-C（長い
+  # skopeo 取得の最中など）や予期しない終了でもプレースホルダを残さない。
+  if [ "$SUCCESS" -ne 1 ] && [ -f "$BACKUP" ]; then
+    cp "$BACKUP" "$SIDECAR"
+    echo "サイドカーを元に戻した" >&2
+  fi
+  rm -f "$BACKUP"
+}
+trap cleanup EXIT INT TERM
 
 write_sidecar() {
   python3 - "$SIDECAR" "$1" "$2" "$3" <<'PY'
@@ -33,7 +44,10 @@ build() {
   ( cd "$HM" && nix build --impure --no-link --print-out-paths --expr '
       let
         lock = builtins.fromJSON (builtins.readFile ./flake.lock);
-        n = lock.nodes.nixpkgs_3.locked;
+        # root の nixpkgs が指す節を辿る。節名（nixpkgs_3 等）は入力の増減で
+        # 自動採番が変わるため、ベタ書きすると別 input の nixpkgs を掴みうる。
+        rootNixpkgs = lock.nodes.${lock.root}.inputs.nixpkgs;
+        n = lock.nodes.${rootNixpkgs}.locked;
         pkgs = import (builtins.fetchTarball {
           url = "https://github.com/${n.owner}/${n.repo}/archive/${n.rev}.tar.gz";
         }) { system = "aarch64-linux"; };
@@ -61,9 +75,15 @@ print(stable[-1])')"
 fi
 echo "対象バージョン: $VERSION"
 
-DIGEST="$(curl -sf -H "Authorization: Bearer $TOKEN" \
+MANIFEST="$(curl -sf -H "Authorization: Bearer $TOKEN" \
   -H "Accept: application/vnd.oci.image.index.v1+json,application/vnd.docker.distribution.manifest.list.v2+json" \
-  "https://ghcr.io/v2/${REPO}/manifests/${VERSION}" \
+  "https://ghcr.io/v2/${REPO}/manifests/${VERSION}" || true)"
+if [ -z "$MANIFEST" ]; then
+  echo "タグ ${VERSION} のマニフェストを取得できない（バージョン名を確認）" >&2
+  exit 1
+fi
+
+DIGEST="$(printf '%s' "$MANIFEST" \
   | python3 -c '
 import json, sys
 for m in json.load(sys.stdin)["manifests"]:
@@ -77,10 +97,13 @@ echo "arm64 digest: $DIGEST"
 
 CURRENT_DIGEST="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["imageDigest"])' "$SIDECAR")"
 CURRENT_VERSION="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["version"])' "$SIDECAR")"
-if [ "$DIGEST" = "$CURRENT_DIGEST" ] && [ "$VERSION" = "$CURRENT_VERSION" ]; then
+CURRENT_HASH="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["hash"])' "$SIDECAR")"
+# hash も見る。プレースホルダのまま残っている状態から再実行したときに
+# 「既に最新」と言って自己修復しないのを防ぐ。
+if [ "$DIGEST" = "$CURRENT_DIGEST" ] && [ "$VERSION" = "$CURRENT_VERSION" ] \
+   && [ "$CURRENT_HASH" != "$PLACEHOLDER" ]; then
   echo "既に最新。変更なし。"
-  rm -f "$BACKUP"
-  trap - ERR
+  SUCCESS=1
   exit 0
 fi
 
@@ -92,16 +115,17 @@ HASH="$(printf '%s\n' "$OUTPUT" | grep -oE 'got: +sha256-[A-Za-z0-9+/=]+' | head
 if [ -z "$HASH" ]; then
   echo "ハッシュの取得に失敗した。ビルド出力:" >&2
   printf '%s\n' "$OUTPUT" | tail -20 >&2
-  restore
-  trap - ERR
   exit 1
 fi
 
 write_sidecar "$VERSION" "$DIGEST" "$HASH"
 echo "ビルドを検証する"
-build > /dev/null
+if ! VERIFY="$(build)"; then
+  echo "検証ビルドが失敗した。出力:" >&2
+  printf '%s\n' "$VERIFY" | tail -20 >&2
+  exit 1
+fi
 
-rm -f "$BACKUP"
-trap - ERR
+SUCCESS=1
 echo "更新した:"
 cat "$SIDECAR"

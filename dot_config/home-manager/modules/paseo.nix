@@ -15,6 +15,15 @@ let
     if pkgs.stdenv.hostPlatform.system == "aarch64-linux"
     then pkgs.callPackage ../packages/paseo-image.nix { }
     else paseo;
+
+  # 0.9.0 で `paseo start --foreground` が廃止され `paseo daemon run` になった。
+  # paseoPkg をホスト別に分岐させている以上、サブコマンドも同じバージョンから
+  # 導かないと食い違う（aarch64-linux は 0.9 系、他は flake input のバージョン）。
+  # flake input を 0.9 系に上げたときは、この分岐が自動で新しい形に切り替わる。
+  paseoDaemonArgs =
+    if lib.versionAtLeast paseoPkg.version "0.9.0"
+    then "daemon run"
+    else "start --foreground";
 in
 {
   home.packages = [ paseoPkg ];
@@ -44,7 +53,7 @@ in
       # IP の直書きを避けられる。
       ExecStart = pkgs.writeShellScript "paseo-start" ''
         export PASEO_PRIMARY_LAN_IP="$(${pkgs.iproute2}/bin/ip -4 route get 1.1.1.1 2>/dev/null | ${pkgs.gnugrep}/bin/grep -oP 'src \K\S+')"
-        exec ${paseoPkg}/bin/paseo daemon run
+        exec ${paseoPkg}/bin/paseo ${paseoDaemonArgs}
       '';
       Restart = "on-failure";
       RestartSec = 5;
