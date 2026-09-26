@@ -5,20 +5,20 @@
 # 読まないホストでは paseo が instantiate すらされない。
 { config, pkgs, lib, paseo, ... }:
 let
-  # aarch64-linux（yomogi）では上流の nix パッケージがモノレポ全体を
-  # buildNpmPackage にかけるため、Pi 4 で 30〜60 分・RSS 3.7GB を要する。
-  # 同じ成果物が ghcr.io/getpaseo/paseo の arm64 イメージとして配布されている
-  # ので、そちらを展開したパッケージを使ってビルドを回避する。
-  # x86_64-linux（hizake / ume）と aarch64-darwin（yuri）はビルドが問題に
-  # ならないため、従来どおり flake input をそのまま使う。
+  # Linux では上流の nix パッケージがモノレポ全体を buildNpmPackage にかけるため、
+  # Pi 4（yomogi）で 30〜60 分・RSS 3.7GB、x86_64（hizake / ume）でも 15 分以上を要する。
+  # さらに 0.9.2 では成果物から server の exports.js が抜けてデーモンが起動しなかった。
+  # 同じ成果物が ghcr.io/getpaseo/paseo の amd64 / arm64 イメージとして配布されて
+  # いるので、そちらを展開したパッケージを使ってビルドを回避する。
+  # aarch64-darwin（yuri）はイメージが無いため、従来どおり flake input をそのまま使う。
   paseoPkg =
-    if pkgs.stdenv.hostPlatform.system == "aarch64-linux"
+    if pkgs.stdenv.hostPlatform.isLinux
     then pkgs.callPackage ../packages/paseo-image.nix { }
     else paseo;
 
   # 0.9.0 で `paseo start --foreground` が廃止され `paseo daemon run` になった。
   # paseoPkg をホスト別に分岐させている以上、サブコマンドも同じバージョンから
-  # 導かないと食い違う（aarch64-linux は 0.9 系、他は flake input のバージョン）。
+  # 導かないと食い違う（Linux はイメージのバージョン、yuri は flake input のバージョン）。
   # flake input を 0.9 系に上げたときは、この分岐が自動で新しい形に切り替わる。
   paseoDaemonArgs =
     if lib.versionAtLeast paseoPkg.version "0.9.0"

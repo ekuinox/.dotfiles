@@ -86,7 +86,7 @@ flake の鍵はマシンの個体名で持つ。`flake.nix` の `hosts` がホ�
 - `hosts/linux.nix`: Linux ホストが共通で読む。systemd ユニット、Linux 限定パッケージ、podman 一式、GNU coreutils はここに置く。これらは darwin で評価が通らないため `common.nix` には置かない。
 - `hosts/wsl.nix`: WSL 共通。herdr（AI コーディングエージェント用ターミナルワークスペース管理）を入れて設定する。
 - `hosts/pi.nix`: Raspberry Pi 共通。pi 系で共通化したい設定はここに書けば全 Pi に反映される。
-- `modules/paseo.nix`: paseo 本体と常駐デーモン。種別ではなく個体ごとに `imports` で取り込む。paseo はビルドが重く、スペックの高くない sumomo / aoi では導入を避けたいため。nix の遅延評価により、読まないホストでは paseo が instantiate すらされない。デーモンの常駐は Linux 限定で、yuri では paseo コマンドが PATH に入るだけになる。
+- `modules/paseo.nix`: paseo 本体と常駐デーモン。種別ではなく個体ごとに `imports` で取り込む。paseo はビルドが重く、スペックの高くない sumomo / aoi では導入を避けたいため。nix の遅延評価により、読まないホストでは paseo が instantiate すらされない。デーモンの常駐は Linux 限定で、yuri では paseo コマンドが PATH に入るだけになる。Linux ホストは上流の公式コンテナイメージ（amd64 / arm64）を展開した `packages/paseo-image.nix` を使い、ソースビルドを避ける。バージョンは `packages/paseo-image.json` に固定してあり、`packages/update-paseo-image.sh` で最新の安定版に更新する。yuri だけは flake input の `paseo` を使う。
 - `hosts/yomogi.nix`: 自宅 Pi の個体名。door-lock 中継の設定を足す。
 - `hosts/yuri.nix`: MacBook Air（Apple Silicon）。macOS の既定シェルに合わせて `programs.zsh` を有効にする。`linux.nix` は読まない。
 

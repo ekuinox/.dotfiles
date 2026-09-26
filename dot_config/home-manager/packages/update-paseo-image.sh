@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # paseo-image.json を最新の安定版へ更新する。
 # 引数を与えるとそのバージョン（例: 0.9.1）に固定する。
+# 対応する全アーキテクチャ（ARCHS）の digest と FOD ハッシュをまとめて書き換える。
 #
 # ghcr は blob の匿名取得を許さず、また必要なハッシュは skopeo が生成する
 # イメージ tar 全体に対するものなので、nix store prefetch-file は使えない。
 # プレースホルダのハッシュで一度ビルドさせ、nix が報告する got: を採る。
+# 取得するのはイメージ tar（pullImage の出力）だけなので、実行するマシンの
+# system に関係なく全アーキテクチャ分を得られる（hizake から arm64 分も取れる）。
 # -E: ERR trap を関数内の失敗でも発火させる（これが無いと build() 内の失敗で
 # 後片付けが走らず、サイドカーが壊れたまま残る）。
 set -Eeuo pipefail
@@ -14,6 +17,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HM="$(cd "$HERE/.." && pwd)"
 SIDECAR="$HERE/paseo-image.json"
 PLACEHOLDER="sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+# nix の system 名と OCI のアーキテクチャ名の対応。paseo-image.nix の archs と揃える。
+declare -A ARCHS=([aarch64-linux]=arm64 [x86_64-linux]=amd64)
 
 BACKUP="$(mktemp)"
 cp "$SIDECAR" "$BACKUP"
@@ -29,29 +34,43 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
+# 引数: version、続けて system digest hash の 3 つ組をアーキテクチャの数だけ。
 write_sidecar() {
-  python3 - "$SIDECAR" "$1" "$2" "$3" <<'PY'
+  python3 - "$SIDECAR" "$@" <<'PY2'
 import json, sys
-path, version, digest, h = sys.argv[1:5]
+path, version, *rest = sys.argv[1:]
+images = {rest[i]: {"imageDigest": rest[i + 1], "hash": rest[i + 2]}
+          for i in range(0, len(rest), 3)}
 with open(path, "w") as f:
-    json.dump({"version": version, "imageDigest": digest, "hash": h},
+    json.dump({"version": version, "images": dict(sorted(images.items()))},
               f, indent=2, ensure_ascii=False)
     f.write("\n")
-PY
+PY2
 }
 
+# 引数の attr（paseo-image.nix の derivation からの相対パス）をビルドする。
+# 例: build 'imageFor "aarch64-linux"'、build '' はパッケージ本体。
 build() {
-  ( cd "$HM" && nix build --impure --no-link --print-out-paths --expr '
+  ( cd "$HM" && nix build --impure --no-link --print-out-paths --expr "
       let
         lock = builtins.fromJSON (builtins.readFile ./flake.lock);
         # root の nixpkgs が指す節を辿る。節名（nixpkgs_3 等）は入力の増減で
         # 自動採番が変わるため、ベタ書きすると別 input の nixpkgs を掴みうる。
-        rootNixpkgs = lock.nodes.${lock.root}.inputs.nixpkgs;
-        n = lock.nodes.${rootNixpkgs}.locked;
+        rootNixpkgs = lock.nodes.\${lock.root}.inputs.nixpkgs;
+        n = lock.nodes.\${rootNixpkgs}.locked;
         pkgs = import (builtins.fetchTarball {
-          url = "https://github.com/${n.owner}/${n.repo}/archive/${n.rev}.tar.gz";
-        }) { system = "aarch64-linux"; };
-      in pkgs.callPackage ./packages/paseo-image.nix { }' 2>&1 )
+          url = \"https://github.com/\${n.owner}/\${n.repo}/archive/\${n.rev}.tar.gz\";
+        }) { };
+        pkg = pkgs.callPackage ./packages/paseo-image.nix { };
+      in pkg${1:+.$1}" 2>&1 )
+}
+
+sidecar_get() {
+  python3 -c 'import json,sys
+d = json.load(open(sys.argv[1]))
+for k in sys.argv[2:]:
+    d = d.get(k, {}) if isinstance(d, dict) else {}
+print(d if isinstance(d, str) else "")' "$SIDECAR" "$@"
 }
 
 TOKEN="$(curl -sf "https://ghcr.io/token?scope=repository:${REPO}:pull&service=ghcr.io" \
@@ -83,44 +102,65 @@ if [ -z "$MANIFEST" ]; then
   exit 1
 fi
 
-DIGEST="$(printf '%s' "$MANIFEST" \
-  | python3 -c '
+declare -A DIGESTS HASHES
+UP_TO_DATE=1
+[ "$VERSION" = "$(sidecar_get version)" ] || UP_TO_DATE=0
+for SYS in "${!ARCHS[@]}"; do
+  DIGESTS[$SYS]="$(printf '%s' "$MANIFEST" \
+    | python3 -c '
 import json, sys
+arch = sys.argv[1]
 for m in json.load(sys.stdin)["manifests"]:
     p = m["platform"]
-    if p["architecture"] == "arm64" and p["os"] == "linux":
+    if p["architecture"] == arch and p["os"] == "linux":
         print(m["digest"])
         break
 else:
-    sys.exit("linux/arm64 のマニフェストが見つからない")')"
-echo "arm64 digest: $DIGEST"
+    sys.exit(f"linux/{arch} のマニフェストが見つからない")' "${ARCHS[$SYS]}")"
+  echo "$SYS (${ARCHS[$SYS]}) digest: ${DIGESTS[$SYS]}"
+  # hash も見る。プレースホルダのまま残っている状態から再実行したときに
+  # 「既に最新」と言って自己修復しないのを防ぐ。
+  CURRENT_HASH="$(sidecar_get images "$SYS" hash)"
+  if [ "${DIGESTS[$SYS]}" != "$(sidecar_get images "$SYS" imageDigest)" ] \
+     || [ -z "$CURRENT_HASH" ] || [ "$CURRENT_HASH" = "$PLACEHOLDER" ]; then
+    UP_TO_DATE=0
+  fi
+done
 
-CURRENT_DIGEST="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["imageDigest"])' "$SIDECAR")"
-CURRENT_VERSION="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["version"])' "$SIDECAR")"
-CURRENT_HASH="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["hash"])' "$SIDECAR")"
-# hash も見る。プレースホルダのまま残っている状態から再実行したときに
-# 「既に最新」と言って自己修復しないのを防ぐ。
-if [ "$DIGEST" = "$CURRENT_DIGEST" ] && [ "$VERSION" = "$CURRENT_VERSION" ] \
-   && [ "$CURRENT_HASH" != "$PLACEHOLDER" ]; then
+if [ "$UP_TO_DATE" -eq 1 ]; then
   echo "既に最新。変更なし。"
   SUCCESS=1
   exit 0
 fi
 
+sidecar_args() {
+  local args=("$VERSION") sys
+  for sys in "${!ARCHS[@]}"; do
+    args+=("$sys" "${DIGESTS[$sys]}" "${HASHES[$sys]:-$PLACEHOLDER}")
+  done
+  write_sidecar "${args[@]}"
+}
+
 echo "ハッシュを取得するため、プレースホルダで一度ビルドする"
-write_sidecar "$VERSION" "$DIGEST" "$PLACEHOLDER"
-OUTPUT="$(build || true)"
-HASH="$(printf '%s\n' "$OUTPUT" | grep -oE 'got: +sha256-[A-Za-z0-9+/=]+' | head -1 | sed 's/got: *//')"
+sidecar_args
+for SYS in "${!ARCHS[@]}"; do
+  OUTPUT="$(build "imageFor \"$SYS\"" || true)"
+  HASH="$(printf '%s\n' "$OUTPUT" | grep -oE 'got: +sha256-[A-Za-z0-9+/=]+' | head -1 | sed 's/got: *//')"
+  if [ -z "$HASH" ]; then
+    echo "$SYS のハッシュの取得に失敗した。ビルド出力:" >&2
+    printf '%s\n' "$OUTPUT" | tail -20 >&2
+    exit 1
+  fi
+  echo "$SYS hash: $HASH"
+  HASHES[$SYS]="$HASH"
+  sidecar_args
+done
 
-if [ -z "$HASH" ]; then
-  echo "ハッシュの取得に失敗した。ビルド出力:" >&2
-  printf '%s\n' "$OUTPUT" | tail -20 >&2
-  exit 1
-fi
-
-write_sidecar "$VERSION" "$DIGEST" "$HASH"
+# 手元の system 向けのパッケージ本体までビルドして、展開・autoPatchelf が通ることを
+# 確かめる。他アーキテクチャはイメージ取得（ハッシュ一致）までしか検証できないので、
+# 該当ホストの switch 後にデーモンの起動を確認すること。
 echo "ビルドを検証する"
-if ! VERIFY="$(build)"; then
+if ! VERIFY="$(build '')"; then
   echo "検証ビルドが失敗した。出力:" >&2
   printf '%s\n' "$VERIFY" | tail -20 >&2
   exit 1
