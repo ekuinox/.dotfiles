@@ -11,6 +11,8 @@
     # 各 system 向け package を公開しているのでそれを home.packages に入れる。
     # nixpkgs は paseo 側のピンに従わせる（follows で上書きしない）。
     # 取り込むのは modules/paseo.nix のみ（hizake / ume / yomogi / yuri が import する）。
+    # Linux ホストは packages/paseo-image.nix（公式コンテナイメージ由来）を使うため、
+    # この input が実際に使われるのは yuri（aarch64-darwin）だけ。
     paseo.url = "github:getpaseo/paseo";
     # herdr（AI コーディングエージェント用ターミナルワークスペース管理）。paseo と
     # 同じく flake が各 system 向け package を公開しているので home.packages に入れる。

@@ -1,10 +1,12 @@
-# paseo を上流が配布する arm64 コンテナイメージから組む。
+# paseo を上流が配布するコンテナイメージ（linux/amd64・linux/arm64）から組む。
 #
 # 上流の nix パッケージ（nix/package.nix）はモノレポ全体を buildNpmPackage に
-# かけるため、Pi 4 では 30〜60 分・RSS 3.7GB を要する。一方その成果物は
+# かけるため、Pi 4 では 30〜60 分・RSS 3.7GB を要し、x86_64 でも 15 分以上かかる
+# （0.9.2 では成果物から server の exports.js が抜け、起動すらできなかった）。一方その成果物は
 # ghcr.io/getpaseo/paseo のイメージとして既に配布されているので、そちらを
 # 展開して使うことでビルドを回避する。参照先は paseo-image.json に固定し、
-# packages/update-paseo-image.sh が書き換える。
+# packages/update-paseo-image.sh が書き換える。イメージの digest と FOD ハッシュは
+# アーキテクチャごとに異なるため、サイドカーは images.<system> の下に分けて持つ。
 { lib
 , stdenv
 , dockerTools
@@ -16,22 +18,36 @@
 
 let
   spec = builtins.fromJSON (builtins.readFile ./paseo-image.json);
+  system = stdenv.hostPlatform.system;
 
-  image = dockerTools.pullImage {
+  # nix の system 名 -> OCI のアーキテクチャ名と、同梱 prebuilds のディレクトリ名。
+  # otherPrebuilds は当該環境で解決できない（＝削除する）側の prebuilds。
+  archs = {
+    aarch64-linux = { oci = "arm64"; otherPrebuilds = "linux-x64"; };
+    x86_64-linux = { oci = "amd64"; otherPrebuilds = "linux-arm64"; };
+  };
+  archFor = sys: archs.${sys} or (throw "paseo-image: ${sys} は未対応");
+  arch = archFor system;
+
+  # 指定 system 向けのイメージを取得する。pullImage の出力（イメージ tar）は
+  # 取得するアーキテクチャだけで決まり、ビルドするマシンの system には依らない。
+  # update-paseo-image.sh が passthru 経由で呼び、手元のマシンのまま全アーキテクチャの
+  # FOD ハッシュを得るのに使う。
+  imageFor = sys: dockerTools.pullImage {
     imageName = "ghcr.io/getpaseo/paseo";
-    imageDigest = spec.imageDigest;
-    hash = spec.hash;
+    imageDigest = spec.images.${sys}.imageDigest;
+    hash = spec.images.${sys}.hash;
     finalImageName = "paseo";
     finalImageTag = spec.version;
     os = "linux";
-    arch = "arm64";
+    arch = (archFor sys).oci;
   };
 in
 stdenv.mkDerivation {
   pname = "paseo";
   version = spec.version;
 
-  src = image;
+  src = imageFor system;
 
   nativeBuildInputs = [ makeWrapper jq autoPatchelfHook ];
 
@@ -45,7 +61,7 @@ stdenv.mkDerivation {
 
   # autoPatchelfIgnoreMissingDeps は使わない。解決できない依存はビルドを止めるべきで、
   # 黙って通すと上流が新しいライブラリを要求し始めたときに実行時まで判明しない。
-  # 当該環境で解決できない linux-x64 の prebuilds は installPhase で削除する
+  # 当該環境で解決できない他アーキテクチャの prebuilds は installPhase で削除する
   # （darwin / win32 の prebuilds は ELF ではないため autoPatchelf は元から無視する）。
 
   # cli/bin/paseo の shebang は `#!/usr/bin/env -S node --disable-warning=DEP0040` で、
@@ -94,10 +110,10 @@ stdenv.mkDerivation {
     mkdir -p "$out/lib"
     cp -r rootfs/usr/local/lib/node_modules "$out/lib/node_modules"
 
-    # 当該環境で解決できない ELF（linux-x64 の prebuilds）を削除する。
-    # これで autoPatchelf が扱う ELF は linux-arm64 のものだけになり、
+    # 当該環境で解決できない ELF（他アーキテクチャの prebuilds）を削除する。
+    # これで autoPatchelf が扱う ELF は自アーキテクチャのものだけになり、
     # 解決漏れを無視する設定が不要になる。
-    find "$out/lib/node_modules" -type d -name 'linux-x64' -prune -exec rm -rf {} +
+    find "$out/lib/node_modules" -type d -name '${arch.otherPrebuilds}' -prune -exec rm -rf {} +
 
     # イメージ内の /usr/local/bin/paseo は相対 symlink なので、実体である
     # cli の dist/index.js を node で直接起動するラッパーに置き換える。
@@ -112,10 +128,12 @@ stdenv.mkDerivation {
     runHook postInstall
   '';
 
+  passthru = { inherit imageFor; };
+
   meta = {
-    description = "Paseo daemon and CLI, repackaged from the upstream arm64 container image";
+    description = "Paseo daemon and CLI, repackaged from the upstream container image";
     homepage = "https://github.com/getpaseo/paseo";
-    platforms = [ "aarch64-linux" ];
+    platforms = builtins.attrNames archs;
     mainProgram = "paseo";
   };
 }
