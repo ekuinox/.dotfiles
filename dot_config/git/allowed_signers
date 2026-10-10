@@ -17,3 +17,6 @@ depkey@me.com namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOj7G1qzJ0yqU
 
 # yuri (MacBook Air)
 depkey@me.com namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHkUGGawQ3v8FDLt9rjtz9v64NOzjGUqRXxATATzTSE+ ekuinox@MacBookAir.elecom
+
+# yomogi (Raspberry Pi)
+depkey@me.com namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEupc6Gt5Axk5WIYpILgL81nWVIh/4A72Er/qaqeWa6M ekuinox@yomogi
