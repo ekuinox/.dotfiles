@@ -78,7 +78,7 @@ flake の鍵はマシンの個体名で持つ。`flake.nix` の `hosts` がホ�
 | ume | x86_64-linux | WSL | linux.nix, wsl.nix | あり |
 | yomogi | aarch64-linux | Raspberry Pi | linux.nix, pi.nix, yomogi.nix, mube モジュール | あり |
 | sumomo | aarch64-linux | Raspberry Pi | linux.nix, pi.nix | なし |
-| aoi | aarch64-linux | Raspberry Pi | linux.nix, pi.nix | なし |
+| aoi | aarch64-linux | Raspberry Pi | linux.nix, pi.nix, aoi.nix | なし |
 | yuri | aarch64-darwin | MacBook Air | yuri.nix | あり |
 
 構成は `common.nix`（OS を問わない全ホスト共通）と `hosts/<name>.nix` に分かれる。
@@ -88,6 +88,7 @@ flake の鍵はマシンの個体名で持つ。`flake.nix` の `hosts` がホ�
 - `hosts/pi.nix`: Raspberry Pi 共通。pi 系で共通化したい設定はここに書けば全 Pi に反映される。
 - `modules/paseo.nix`: paseo 本体と常駐デーモン。種別ではなく個体ごとに `imports` で取り込む。paseo はビルドが重く、スペックの高くない sumomo / aoi では導入を避けたいため。nix の遅延評価により、読まないホストでは paseo が instantiate すらされない。デーモンの常駐は Linux 限定で、yuri では paseo コマンドが PATH に入るだけになる。Linux ホストは上流の公式コンテナイメージ（amd64 / arm64）を展開した `packages/paseo-image.nix` を使い、ソースビルドを避ける。バージョンは `packages/paseo-image.json` に固定してあり、`packages/update-paseo-image.sh` で最新の安定版に更新する。yuri だけは flake input の `paseo` を使う。
 - `hosts/yomogi.nix`: 自宅 Pi の個体名。door-lock 中継の設定を足す。
+- `hosts/aoi.nix`: 自宅 Pi の個体名。aoi の HTTP サーバーを Cloudflare Access の後ろにまとめて公開する入口（`modules/aoi-gateway.nix`）の設定を足す。下の「aoi-gateway」を参照。
 - `hosts/yuri.nix`: MacBook Air（Apple Silicon）。macOS の既定シェルに合わせて `programs.zsh` を有効にする。`linux.nix` は読まない。
 
 汎用の鍵（`wsl` / `pi`）から個体名へ移行したため、古い鍵が焼き込まれた `hms` エイリアスは移行後に一度だけ失敗する。各マシンで次を 1 回手で実行すれば、以後は `hms` が新しい鍵で通る。
@@ -121,6 +122,25 @@ GitHub への自動登録には `gh` のトークンに `admin:ssh_signing_key` 
 - 初回の chezmoi 自体は公式インストーラで入る（ブートストラップ用）。Linux / macOS では claude-code と chezmoi を home-manager（nix）が `home.packages` で管理するため、`home-manager switch` 後は nix 側の chezmoi も利用できる。
 - mise 本体は home-manager（`programs.mise`）が入れるが、グローバルの tool バージョンは固定しない方針のため mise の `config.toml` は chezmoi 管理対象外。node 等が必要ならプロジェクト単位の `mise.toml` 等で都度入れる。
 - macOS では Homebrew と併用する。CLI は home-manager（nix）に寄せ、Homebrew は GUI アプリ（cask）と nixpkgs に無いものだけに使う。両方に同じコマンドを入れると PATH 順で実体が変わり分かりにくくなる。
+
+## aoi-gateway
+
+aoi の HTTP サーバーを `<サービス名>-aoi.ekuinox.dev` で公開し、Cloudflare Access のログインで守る。
+Caddy（Host の完全一致で振り分け、Cf-* ヘッダを削る）と cloudflared（Protect with Access で JWT を検証）を systemd ユーザーサービスとして動かす。
+設計の経緯、展開手順、確認項目は [docs/superpowers/specs/2026-10-12-aoi-gateway-design.md](docs/superpowers/specs/2026-10-12-aoi-gateway-design.md) にある。
+
+サーバーを足すときは、`hosts/aoi.nix` の `routes` にサービス名と転送先を 1 行足して aoi で `hms` を実行し、`aoi-gateway-check` で公開の状態を確かめる。
+Cloudflare 側の作業は要らない。
+
+```nix
+routes = {
+  kgd = "http://172.20.1.1:8081";   # kgd-aoi.ekuinox.dev
+};
+```
+
+`cloudflared tunnel route dns` にはトンネルを名前ではなく UUID で渡す。
+名前で渡したとき、手元の cloudflared の設定（`config.yml` の `credentials-file` や環境変数 `TUNNEL_CRED_FILE`）が別のトンネルの認証情報を指していると、cloudflared はそのトンネル ID を名前と照合せずに使い、別のトンネルを指す CNAME ができる。
+同じ理由で、`cloudflared tunnel create` には `--credentials-file` で書き出し先を明示する。省くと `config.yml` の `credentials-file` に書き出そうとし、既存のファイルがあると認証情報を書き出せないままトンネルだけが作られる。
 
 ## winget パッケージ管理（Windows）
 
