@@ -59,9 +59,10 @@
           system = "aarch64-linux";
           modules = [ ./hosts/linux.nix ./hosts/pi.nix ];
         };
+        # aoi: aoi の HTTP サーバーを Cloudflare Access の後ろに公開する入口（aoi-gateway）を担う。
         aoi = {
           system = "aarch64-linux";
-          modules = [ ./hosts/linux.nix ./hosts/pi.nix ];
+          modules = [ ./hosts/linux.nix ./hosts/pi.nix ./hosts/aoi.nix ];
         };
         # yuri: MacBook Air (Apple Silicon)。linux.nix は読まない。
         yuri = {
