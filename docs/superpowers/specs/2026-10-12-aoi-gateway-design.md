@@ -339,7 +339,6 @@ kgd のリポジトリで別の PR として行う。
 ## 未確定事項
 
 - 本番の kgd の `allowed_cidrs` に aoi の LAN アドレスが含まれるか
-- `cloudflared tunnel route dns` でワイルドカードのレコードを作れるか
 
 2026-10-12 に aoi で次を確かめた。
 
@@ -349,3 +348,5 @@ kgd のリポジトリで別の PR として行う。
 
 同日、トンネル `aoi-gateway`（`f8c8da83-f4d2-4b84-8c85-9f0c51feca13`）を作成した。
 チーム名は、既存の Access アプリのログイン画面の URL から `white-fog-5e56` と分かった。
+`cloudflared tunnel route dns <UUID> '*.ekuinox.dev'` でワイルドカードの CNAME を作れた。
+AUD タグは、`kgd-aoi.ekuinox.dev` を未ログインで開いたときのリダイレクト先の URL の `kid` から読み取れた。
