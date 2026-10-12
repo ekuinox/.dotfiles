@@ -140,6 +140,7 @@ routes = {
 
 `cloudflared tunnel route dns` にはトンネルを名前ではなく UUID で渡す。
 名前で渡したとき、手元の cloudflared の設定（`config.yml` の `credentials-file` や環境変数 `TUNNEL_CRED_FILE`）が別のトンネルの認証情報を指していると、cloudflared はそのトンネル ID を名前と照合せずに使い、別のトンネルを指す CNAME ができる。
+同じ理由で、`cloudflared tunnel create` には `--credentials-file` で書き出し先を明示する。省くと `config.yml` の `credentials-file` に書き出そうとし、既存のファイルがあると認証情報を書き出せないままトンネルだけが作られる。
 
 ## winget パッケージ管理（Windows）
 

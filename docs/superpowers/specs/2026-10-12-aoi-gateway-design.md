@@ -104,7 +104,7 @@ yomogi の door-lock の中継（mube の `nix/door-lock-relay.nix`）は、Cadd
   → Cloudflare エッジ … Access アプリ *-aoi.ekuinox.dev（自分のメールアドレスのみ Allow）
   → DNS *.ekuinox.dev（プロキシ付き CNAME）→ トンネル aoi-gateway
   → cloudflared（aoi） … catch-all で全ホスト名を Caddy へ。Protect with Access で JWT を検証
-  → Caddy 127.0.0.1:8080（aoi） … Host の完全一致で振り分け、Cf-* ヘッダを削る。一致しなければ 404
+  → Caddy 127.0.0.1:8090（aoi） … Host の完全一致で振り分け、Cf-* ヘッダを削る。一致しなければ 404
   → 各サーバー（kgd は 172.20.1.1:8081）
 ```
 
@@ -151,7 +151,7 @@ loopback を `allowed_cidrs` に足すと、aoi 上の任意のプロセスが H
 aoi 自身が LAN アドレス経由で kgd に届くのは今日すでに可能であり、新たに広がる露出は無い。
 
 LAN アドレスが変わると転送が壊れるため、DHCP の予約で固定する。
-`172.20.1.1` は yomogi から `aoi.local` を引いた結果であり、aoi 上で `ip -4 addr` を見て確かめる。
+aoi 上の `ip -4 addr` で、`eth0` が `172.20.1.1/16` であることを確かめた（2026-10-12）。
 
 ## home-manager モジュールの設計
 
@@ -274,7 +274,7 @@ aoi では kgd の compose の中でも cloudflared（OwnTracks 用）が動い�
 ## 展開手順
 
 1. Access アプリ `*-aoi.ekuinox.dev` のチーム名と AUD タグを控える。チーム名はログイン画面の URL（`<チーム名>.cloudflareaccess.com`）、AUD タグはアプリの設定画面の Application Audience (AUD) Tag で分かる
-2. `cert.pem` のあるマシンで `cloudflared tunnel create aoi-gateway` を実行し、出力された UUID を控える。生成された `~/.cloudflared/<UUID>.json` を aoi の同じパスへ置く
+2. `cert.pem` のあるマシンで `cloudflared tunnel create --credentials-file <書き出し先> aoi-gateway` を実行し、出力された UUID を控える。書き出した認証情報を aoi の `~/.cloudflared/<UUID>.json` に置く。`--credentials-file` を省くと、そのマシンの `config.yml` の `credentials-file`（yomogi では door-lock の認証情報）に書き出そうとし、既存のファイルがあるため書き出しに失敗する（トンネルだけが作られる）
 3. aoi で `loginctl enable-linger` が有効かを確かめ、無効なら有効にする。`ip -4 addr` で LAN アドレスを確かめ、DHCP の予約を取る。`ss -ltn` で 8080 番が空いていることも確かめる（塞がっていれば `proxyPort` を変える）
 4. `hosts/aoi.nix` に `tunnelId`、`teamName`、`audTags` を書き、`enable = true` にしてマージする。aoi で `hms` を実行し、`systemctl --user status aoi-gateway-proxy cloudflared-aoi-gateway` で 2 つが動いていることを確かめる
 5. kgd の `config.toml` の `[location.viewer] allowed_hosts` に `kgd-aoi.ekuinox.dev` を足し、kgd を起動し直す。本番の `allowed_cidrs` に aoi の LAN アドレスが含まれることも確かめる
@@ -338,8 +338,14 @@ kgd のリポジトリで別の PR として行う。
 
 ## 未確定事項
 
-- aoi の LAN アドレス（yomogi から引いた `172.20.1.1` を aoi 上で確かめる）
 - 本番の kgd の `allowed_cidrs` に aoi の LAN アドレスが含まれるか
 - `cloudflared tunnel route dns` でワイルドカードのレコードを作れるか
-- aoi で linger が有効か
-- aoi で 8080 番が空いているか
+
+2026-10-12 に aoi で次を確かめた。
+
+- LAN アドレスは `172.20.1.1`
+- linger は有効
+- 8080 番は別のプロセス（python3）が使っているため、`hosts/aoi.nix` では `proxyPort = 8090` にした
+
+同日、トンネル `aoi-gateway`（`f8c8da83-f4d2-4b84-8c85-9f0c51feca13`）を作成した。
+チーム名は、既存の Access アプリのログイン画面の URL から `white-fog-5e56` と分かった。

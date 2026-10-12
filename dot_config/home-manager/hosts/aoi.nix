@@ -7,10 +7,14 @@
   imports = [ ../modules/aoi-gateway.nix ];
 
   services.aoi-gateway = {
-    # トンネル aoi-gateway を作成し、tunnelId / teamName / audTags を埋めてから true にする
+    # Access アプリ *-aoi.ekuinox.dev の AUD タグを audTags に書いてから true にする
     # （spec の展開手順 1〜4）。
     enable = false;
     domain = "ekuinox.dev";
+    tunnelId = "f8c8da83-f4d2-4b84-8c85-9f0c51feca13"; # cloudflared tunnel create aoi-gateway
+    teamName = "white-fog-5e56";
+    # aoi の 8080 番は別のプロセスが使っているため 8090 番で待ち受ける
+    proxyPort = 8090;
     protocol = "http2"; # この回線は QUIC(UDP 7844) が塞がれているため必須
     routes = {
       # 公開ホスト名は kgd-aoi.ekuinox.dev。転送先は loopback ではなく aoi の LAN アドレスにする
