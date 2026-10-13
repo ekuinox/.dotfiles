@@ -99,7 +99,7 @@ def check_repo(repo):
     # API パスに埋め込むため、owner / name に使えない文字やドットセグメントを拒否する
     parts = repo.split("/") if isinstance(repo, str) else []
     if (len(parts) != 2 or parts[0].startswith("-")
-            or not all(NAME_RE.match(x) and x not in (".", "..") for x in parts)):
+            or not all(NAME_RE.fullmatch(x) and x not in (".", "..") for x in parts)):
         raise ValueError("repo must be 'owner/name'")
     return repo
 
