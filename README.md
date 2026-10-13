@@ -74,7 +74,7 @@ flake の鍵はマシンの個体名で持つ。`flake.nix` の `hosts` がホ�
 
 | host | system | 種別 | 読むモジュール | paseo |
 | --- | --- | --- | --- | --- |
-| hizake | x86_64-linux | WSL | linux.nix, wsl.nix | あり |
+| hizake | x86_64-linux | WSL | linux.nix, wsl.nix, hizake.nix | あり |
 | ume | x86_64-linux | WSL | linux.nix, wsl.nix | あり |
 | yomogi | aarch64-linux | Raspberry Pi | linux.nix, pi.nix, yomogi.nix, mube モジュール | あり |
 | sumomo | aarch64-linux | Raspberry Pi | linux.nix, pi.nix | なし |
@@ -87,6 +87,8 @@ flake の鍵はマシンの個体名で持つ。`flake.nix` の `hosts` がホ�
 - `hosts/wsl.nix`: WSL 共通。herdr（AI コーディングエージェント用ターミナルワークスペース管理）を入れて設定する。
 - `hosts/pi.nix`: Raspberry Pi 共通。pi 系で共通化したい設定はここに書けば全 Pi に反映される。
 - `modules/paseo.nix`: paseo 本体と常駐デーモン。種別ではなく個体ごとに `imports` で取り込む。paseo はビルドが重く、スペックの高くない sumomo / aoi では導入を避けたいため。nix の遅延評価により、読まないホストでは paseo が instantiate すらされない。デーモンの常駐は Linux 限定で、yuri では paseo コマンドが PATH に入るだけになる。Linux ホストは上流の公式コンテナイメージ（amd64 / arm64）を展開した `packages/paseo-image.nix` を使い、ソースビルドを避ける。バージョンは `packages/paseo-image.json` に固定してあり、`packages/update-paseo-image.sh` で最新の安定版に更新する。yuri だけは flake input の `paseo` を使う。
+- `hosts/hizake.nix`: GPU（RTX 3070）を持つ WSL 機の個体名。`modules/local-llm.nix` を取り込む。同じ WSL でも GPU の無い ume は読まない。
+- `modules/local-llm.nix`: ローカル LLM。CUDA 版 llama.cpp の `llama-server` で Qwythos-9B-v2（Q4_K_M、Hugging Face のリビジョンとハッシュで固定）を動かす systemd user サービス。ログイン時に自動起動して常駐し、5 分間リクエストが無ければモデルを VRAM から解放してスリープする（次のリクエストで自動的に読み込み直し、初回応答が 10 秒ほど遅れる）。手動では `systemctl --user stop llama-server` / `start` で止める・起動する。Web UI と OpenAI 互換 API は `http://localhost:8080`。gh CLI の読み取り系サブコマンドを呼ぶ自前の MCP サーバー（`packages/gh-search-mcp.nix`）を登録してあり、Web UI からモデルに GitHub を検索させられる。CUDA 版は公式キャッシュに無いため初回は手元ビルドになる（対象 GPU を sm_86 に絞って短縮している）。
 - `hosts/yomogi.nix`: 自宅 Pi の個体名。door-lock 中継の設定を足す。
 - `hosts/aoi.nix`: 自宅 Pi の個体名。aoi の HTTP サーバーを Cloudflare Access の後ろにまとめて公開する入口（`modules/aoi-gateway.nix`）の設定を足す。下の「aoi-gateway」を参照。
 - `hosts/yuri.nix`: MacBook Air（Apple Silicon）。macOS の既定シェルに合わせて `programs.zsh` を有効にする。`linux.nix` は読まない。

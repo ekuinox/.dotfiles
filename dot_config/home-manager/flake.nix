@@ -33,10 +33,10 @@
       # common.nix には置かない）。paseo は重いので pi 系では yomogi だけが持ち、
       # 取り込みは modules/paseo.nix の imports で個体ごとに決める。
       hosts = {
-        # WSL (x86_64) 機
+        # WSL (x86_64) 機。hizake は GPU を持つため、ローカル LLM を hosts/hizake.nix で足す。
         hizake = {
           system = "x86_64-linux";
-          modules = [ ./hosts/linux.nix ./hosts/wsl.nix ];
+          modules = [ ./hosts/linux.nix ./hosts/wsl.nix ./hosts/hizake.nix ];
         };
         ume = {
           system = "x86_64-linux";
