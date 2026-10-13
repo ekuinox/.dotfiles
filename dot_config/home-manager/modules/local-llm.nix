@@ -49,6 +49,11 @@ let
       timeout_ms = 60000;
     };
   });
+
+  # Web UI の設定の既定値（ブラウザ側で変更した値はそちらが優先される）。
+  webuiConfig = pkgs.writeText "llama-webui-config.json" (builtins.toJSON {
+    excludeReasoningFromContext = true;
+  });
 in
 {
   home.packages = [ llama-cpp ];
@@ -62,7 +67,9 @@ in
   # （実測で 64k は 32k の 1/3 程度）ため 32k に留め、KV キャッシュを q8_0 に量子化して
   # 全層を GPU に載せる（実測で約 19 → 33 tokens/s）。
   # 推論過程（reasoning）を履歴に残すとツール呼び出しを重ねるうちにコンテキストを
-  # 使い切るため、--no-reasoning-preserve で直近の応答以外からは落とす。
+  # 使い切るため、Web UI の「Exclude reasoning from context」を既定で ON にする。
+  # サーバー側の --no-reasoning-preserve は使わない（UI の設定に関係なく捨ててしまい、
+  # UI から会話ごとに切り替えられなくなるため）。
   # 待ち受けは 127.0.0.1 のみ。WSL の mirrored networking により Windows 側の
   # ブラウザからも http://localhost:8080 で開ける。
   systemd.user.services.llama-server = {
@@ -74,7 +81,7 @@ in
         "--alias qwythos-9b-v2"
         "-c 32768 --fit on"
         "-ctk q8_0 -ctv q8_0"
-        "--no-reasoning-preserve"
+        "--webui-config-file ${webuiConfig}"
         "--temp 0.6 --top-p 0.95 --top-k 20"
         "--sleep-idle-seconds 300"
         "--mcp-servers-config ${mcpConfig}"
