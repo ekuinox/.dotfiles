@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 GH = "gh"  # nix パッケージ化の際に絶対パスへ置き換える
-MAX_CHARS = 12000
+MAX_CHARS = 4000
 TIMEOUT = 60
 
 TOOLS = [
@@ -21,7 +21,7 @@ TOOLS = [
             "properties": {
                 "query": {"type": "string", "description": "Search keywords and qualifiers"},
                 "sort": {"type": "string", "enum": ["best-match", "stars", "forks", "updated"], "description": "Sort order (default best-match)"},
-                "limit": {"type": "integer", "description": "Max results, 1-20 (default 10)"},
+                "limit": {"type": "integer", "description": "Max results, 1-20 (default 5)"},
             },
             "required": ["query"],
         },
@@ -33,7 +33,7 @@ TOOLS = [
             "type": "object",
             "properties": {
                 "query": {"type": "string", "description": "Search keywords and qualifiers"},
-                "limit": {"type": "integer", "description": "Max results, 1-20 (default 10)"},
+                "limit": {"type": "integer", "description": "Max results, 1-20 (default 5)"},
             },
             "required": ["query"],
         },
@@ -45,7 +45,7 @@ TOOLS = [
             "type": "object",
             "properties": {
                 "query": {"type": "string", "description": "Search keywords and qualifiers"},
-                "limit": {"type": "integer", "description": "Max results, 1-20 (default 10)"},
+                "limit": {"type": "integer", "description": "Max results, 1-20 (default 5)"},
             },
             "required": ["query"],
         },
@@ -84,9 +84,9 @@ def run_gh(args):
 
 def clamp_limit(v):
     try:
-        return str(max(1, min(20, int(v or 10))))
+        return str(max(1, min(20, int(v or 5))))
     except (TypeError, ValueError):
-        return "10"
+        return "5"
 
 
 def check_repo(repo):

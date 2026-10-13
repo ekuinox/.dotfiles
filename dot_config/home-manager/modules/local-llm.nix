@@ -58,6 +58,11 @@ in
   # 次のリクエストで自動的に読み込み直す（復帰時の初回応答は 10 秒ほど遅れる）。
   # スリープ中も CUDA コンテキスト分の数百 MB は残る。
   # --fit で VRAM に載る分だけ GPU に置き、載らない分は CPU で動かす。
+  # コンテキストを広げると KV キャッシュの分だけ GPU に載る層が減って大きく遅くなる
+  # （実測で 64k は 32k の 1/3 程度）ため 32k に留め、KV キャッシュを q8_0 に量子化して
+  # 全層を GPU に載せる（実測で約 19 → 33 tokens/s）。
+  # 推論過程（reasoning）を履歴に残すとツール呼び出しを重ねるうちにコンテキストを
+  # 使い切るため、--no-reasoning-preserve で直近の応答以外からは落とす。
   # 待ち受けは 127.0.0.1 のみ。WSL の mirrored networking により Windows 側の
   # ブラウザからも http://localhost:8080 で開ける。
   systemd.user.services.llama-server = {
@@ -68,6 +73,8 @@ in
         "-m ${model}"
         "--alias qwythos-9b-v2"
         "-c 32768 --fit on"
+        "-ctk q8_0 -ctv q8_0"
+        "--no-reasoning-preserve"
         "--temp 0.6 --top-p 0.95 --top-k 20"
         "--sleep-idle-seconds 300"
         "--mcp-servers-config ${mcpConfig}"
