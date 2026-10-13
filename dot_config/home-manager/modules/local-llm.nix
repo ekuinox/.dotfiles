@@ -19,7 +19,8 @@ let
 
   # nix の CUDA バイナリは libcuda を /run/opengl-driver/lib から探すが、Ubuntu の WSL には
   # 無い。WSL では Windows 側ドライバが /usr/lib/wsl/lib に libcuda を公開しているので、
-  # 全コマンドをラップしてそこを参照させる。これが無いと黙って CPU 実行にフォールバックする。
+  # 全コマンドをラップしてそこを参照させる。これが無いと黙って CPU 実行にフォールバックする
+  # （サービスは --device CUDA0 を指定し、CUDA が見えなければ起動時にエラーで止める）。
   llama-cpp = pkgs.symlinkJoin {
     name = "llama-cpp-wsl-cuda";
     paths = [ (cudaPkgs.llama-cpp.override { cudaSupport = true; }) ];
@@ -79,6 +80,7 @@ in
         "${llama-cpp}/bin/llama-server"
         "-m ${model}"
         "--alias qwythos-9b-v2"
+        "--device CUDA0"
         "-c 32768 --fit on"
         "-ctk q8_0 -ctv q8_0"
         "--webui-config-file ${webuiConfig}"

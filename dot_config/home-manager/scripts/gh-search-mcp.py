@@ -5,12 +5,15 @@ Only read-only gh subcommands are exposed; arguments are passed as argv (no shel
 """
 import base64
 import json
+import re
+import shlex
 import subprocess
 import sys
+import urllib.parse
 
 GH = "gh"  # nix パッケージ化の際に絶対パスへ置き換える
 MAX_CHARS = 4000
-TIMEOUT = 60
+TIMEOUT = 30  # llama-server 側の timeout_ms (60s) より短くし、こちらのエラーを先に返す
 
 TOOLS = [
     {
@@ -89,15 +92,33 @@ def clamp_limit(v):
         return "5"
 
 
+NAME_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
+
+
 def check_repo(repo):
-    if not isinstance(repo, str) or repo.count("/") != 1 or repo.startswith("-"):
+    # API パスに埋め込むため、owner / name に使えない文字やドットセグメントを拒否する
+    parts = repo.split("/") if isinstance(repo, str) else []
+    if (len(parts) != 2 or parts[0].startswith("-")
+            or not all(NAME_RE.match(x) and x not in (".", "..") for x in parts)):
         raise ValueError("repo must be 'owner/name'")
     return repo
 
 
+def encode_path(path):
+    segs = [x for x in str(path or "").split("/") if x]
+    if any(x in (".", "..") for x in segs):
+        raise ValueError("invalid path")
+    return "/".join(urllib.parse.quote(x, safe="") for x in segs)
+
+
 def query_args(q):
-    # "--" stops gh from treating a query beginning with "-" as a flag
-    return ["--", str(q)]
+    # gh search は空白を含む 1 引数をフレーズとしてクォートし qualifier が効かなくなるため、
+    # シェルと同じ規則で語に分けて渡す。"--" は "-" で始まる語をフラグと誤認させないため。
+    try:
+        words = shlex.split(str(q))
+    except ValueError:
+        words = str(q).split()
+    return ["--", *words]
 
 
 def call_tool(name, a):
@@ -120,13 +141,12 @@ def call_tool(name, a):
     if name == "view_repo":
         return run_gh(["repo", "view", check_repo(a["repo"])])
     if name == "read_file":
-        path = str(a.get("path") or "").strip("/")
-        if ".." in path.split("/"):
-            raise ValueError("invalid path")
-        endpoint = f"repos/{check_repo(a['repo'])}/contents/{path}"
+        endpoint = f"repos/{check_repo(a['repo'])}/contents/{encode_path(a.get('path'))}"
+        args = ["api", "-X", "GET", endpoint]
         if a.get("ref"):
-            endpoint += "?ref=" + str(a["ref"])
-        data = json.loads(run_gh(["api", "-X", "GET", endpoint]))
+            # -X GET のとき -f はエンコードされたクエリパラメータになる
+            args += ["-f", f"ref={a['ref']}"]
+        data = json.loads(run_gh(args))
         if isinstance(data, list):
             return "\n".join(f"{e['type']}\t{e['path']}" for e in data)
         if data.get("encoding") == "base64":
@@ -153,6 +173,8 @@ def main():
         try:
             req = json.loads(line)
         except json.JSONDecodeError:
+            continue
+        if not isinstance(req, dict):  # バッチや不正な値は無視する（落ちるとツールを失う）
             continue
         method, msg_id = req.get("method"), req.get("id")
         if msg_id is None:  # notification
