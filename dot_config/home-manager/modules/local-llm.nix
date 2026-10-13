@@ -53,9 +53,11 @@ in
 {
   home.packages = [ llama-cpp ];
 
-  # 常駐はさせない（WantedBy を付けない）。起動中は VRAM を数 GB 占有するため、
-  # 使うときだけ `systemctl --user start llama-server` で起動し、`stop` で止める。
-  # VRAM 8GB に全層は載らないため --fit で載る分だけ GPU に置き、残りは CPU で動かす。
+  # ログイン時に自動起動して常駐させる。モデルを載せている間は VRAM を約 5GB 占有するため、
+  # --sleep-idle-seconds で 5 分間リクエストが無ければモデルを解放してスリープし、
+  # 次のリクエストで自動的に読み込み直す（復帰時の初回応答は 10 秒ほど遅れる）。
+  # スリープ中も CUDA コンテキスト分の数百 MB は残る。
+  # --fit で VRAM に載る分だけ GPU に置き、載らない分は CPU で動かす。
   # 待ち受けは 127.0.0.1 のみ。WSL の mirrored networking により Windows 側の
   # ブラウザからも http://localhost:8080 で開ける。
   systemd.user.services.llama-server = {
@@ -67,11 +69,13 @@ in
         "--alias qwythos-9b-v2"
         "-c 32768 --fit on"
         "--temp 0.6 --top-p 0.95 --top-k 20"
+        "--sleep-idle-seconds 300"
         "--mcp-servers-config ${mcpConfig}"
         "--host 127.0.0.1 --port 8080"
       ];
       Restart = "on-failure";
       RestartSec = 5;
     };
+    Install.WantedBy = [ "default.target" ];
   };
 }
