@@ -1,4 +1,4 @@
-# Linux 共通のホスト設定。Linux ホスト（hizake / ume / yomogi / sumomo / aoi）が読む。
+# Linux 共通のホスト設定。Linux ホスト（hizake / ume / yomogi / sumomo / aoi / ibuki）が読む。
 # common.nix を OS 非依存に保つため、Linux でしか成立しない設定はここへ置く。
 #   - systemd.user.* は home-manager が非 Linux で assertion により弾く
 #   - strace / pciutils / usbutils / traceroute は nixpkgs 上で Linux 限定

@@ -10,7 +10,7 @@
     # Paseo（リモートからエージェントを操作する CLI/サーバー）。flake が
     # 各 system 向け package を公開しているのでそれを home.packages に入れる。
     # nixpkgs は paseo 側のピンに従わせる（follows で上書きしない）。
-    # 取り込むのは modules/paseo.nix のみ（hizake / ume / yomogi / yuri が import する）。
+    # 取り込むのは modules/paseo.nix のみ（hizake / ume / yomogi / ibuki / yuri が import する）。
     # Linux ホストは packages/paseo-image.nix（公式コンテナイメージ由来）を使うため、
     # この input が実際に使われるのは yuri（aarch64-darwin）だけ。
     paseo.url = "github:getpaseo/paseo";
@@ -63,6 +63,12 @@
         aoi = {
           system = "aarch64-linux";
           modules = [ ./hosts/linux.nix ./hosts/pi.nix ./hosts/aoi.nix ];
+        };
+        # ibuki: 自宅の x86_64 実機サーバー（Ubuntu、ヘッドレス）。WSL ではないため
+        # wsl.nix（herdr）は読まず、paseo は hosts/ibuki.nix で取り込む。
+        ibuki = {
+          system = "x86_64-linux";
+          modules = [ ./hosts/linux.nix ./hosts/ibuki.nix ];
         };
         # yuri: MacBook Air (Apple Silicon)。linux.nix は読まない。
         yuri = {

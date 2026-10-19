@@ -79,6 +79,7 @@ flake の鍵はマシンの個体名で持つ。`flake.nix` の `hosts` がホ�
 | yomogi | aarch64-linux | Raspberry Pi | linux.nix, pi.nix, yomogi.nix, mube モジュール | あり |
 | sumomo | aarch64-linux | Raspberry Pi | linux.nix, pi.nix | なし |
 | aoi | aarch64-linux | Raspberry Pi | linux.nix, pi.nix, aoi.nix | なし |
+| ibuki | x86_64-linux | 自宅サーバー（Ubuntu） | linux.nix, ibuki.nix | あり |
 | yuri | aarch64-darwin | MacBook Air | yuri.nix | あり |
 
 構成は `common.nix`（OS を問わない全ホスト共通）と `hosts/<name>.nix` に分かれる。
@@ -91,6 +92,7 @@ flake の鍵はマシンの個体名で持つ。`flake.nix` の `hosts` がホ�
 - `modules/local-llm.nix`: ローカル LLM。CUDA 版 llama.cpp の `llama-server` で Qwythos-9B-v2（Q4_K_M、Hugging Face のリビジョンとハッシュで固定）を動かす systemd user サービス。ログイン時に自動起動して常駐し、5 分間リクエストが無ければモデルを VRAM から解放してスリープする（次のリクエストで自動的に読み込み直し、初回応答が 10 秒ほど遅れる）。手動では `systemctl --user stop llama-server` / `start` で止める・起動する。Web UI と OpenAI 互換 API は `http://localhost:8080`。gh CLI の読み取り系サブコマンドを呼ぶ自前の MCP サーバー（`packages/gh-search-mcp.nix`）を登録してあり、Web UI からモデルに GitHub を検索させられる。CUDA 版は公式キャッシュに無いため初回は手元ビルドになる（対象 GPU を sm_86 に絞って短縮している）。
 - `hosts/yomogi.nix`: 自宅 Pi の個体名。door-lock 中継の設定を足す。
 - `hosts/aoi.nix`: 自宅 Pi の個体名。aoi の HTTP サーバーを Cloudflare Access の後ろにまとめて公開する入口（`modules/aoi-gateway.nix`）の設定を足す。下の「aoi-gateway」を参照。
+- `hosts/ibuki.nix`: 自宅の x86_64 実機サーバー（Ubuntu、ヘッドレス）の個体名。`modules/paseo.nix` を取り込む。WSL ではないため `wsl.nix` は読まない。paseo デーモンをログインなしで動かすため、`sudo loginctl enable-linger $USER` が必要。
 - `hosts/yuri.nix`: MacBook Air（Apple Silicon）。macOS の既定シェルに合わせて `programs.zsh` を有効にする。`linux.nix` は読まない。
 
 汎用の鍵（`wsl` / `pi`）から個体名へ移行したため、古い鍵が焼き込まれた `hms` エイリアスは移行後に一度だけ失敗する。各マシンで次を 1 回手で実行すれば、以後は `hms` が新しい鍵で通る。

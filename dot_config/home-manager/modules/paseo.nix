@@ -1,6 +1,6 @@
 # Paseo（リモートからエージェントを操作する CLI/サーバー）を入れるホスト用のモジュール。
 # linux.nix のように種別で読むのではなく、必要な個体だけが imports で取り込む
-# （hizake / ume / yomogi / yuri）。paseo はビルドが重く、スペックの低い Pi
+# （hizake / ume / yomogi / ibuki / yuri）。paseo はビルドが重く、スペックの低い Pi
 # （sumomo / aoi）では導入を避けたいため。nix の遅延評価により、本モジュールを
 # 読まないホストでは paseo が instantiate すらされない。
 { config, pkgs, lib, paseo, ... }:
