@@ -40,6 +40,8 @@ in
       pkgs.ffmpeg-headless
       pkgs.gcc
       pkgs.gh
+      # OS 側に git が無いホスト（Ubuntu Server の ibuki 等）でも使えるよう nix で入れる
+      pkgs.git
       pkgs.gogcli
       # curl 代替の HTTP クライアント（本体コマンドは http / https）
       pkgs.httpie
