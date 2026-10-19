@@ -20,3 +20,6 @@ depkey@me.com namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHkUGGawQ3v8F
 
 # yomogi (Raspberry Pi)
 depkey@me.com namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEupc6Gt5Axk5WIYpILgL81nWVIh/4A72Er/qaqeWa6M ekuinox@yomogi
+
+# ibuki (自宅 x86_64 サーバー)
+depkey@me.com namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPy319fww7THXycacPk9nbvCCZMdoNE6qv25oE0oGCuE ekuinox@ibuki
